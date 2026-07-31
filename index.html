@@ -512,7 +512,19 @@ window.addEventListener('load', function () {
       yourSubmissionPending: "Your submission is waiting for admin approval",
       contestVisibility: "Who can see this contest",
       visibleToEveryone: "Visible to everyone",
-      visibleToSelected: "Visible only to"
+      visibleToSelected: "Visible only to",
+      temperature: "Temperature",
+      cold: "Cold",
+      warm: "Warm",
+      hot: "Hot",
+      allContacts: "All",
+      tagSomeone: "Tag someone",
+      you: "you",
+      activityOpenedApp: "opened the app",
+      activityLoggedPoints: "logged some OCS activity",
+      activityAddedMaterial: "added a new material",
+      activityAddedRoleplay: "added a role play recording",
+      activityAddedContact: "added a new contact"
     },
     id: {
       home: "Beranda",
@@ -691,7 +703,19 @@ window.addEventListener('load', function () {
       yourSubmissionPending: "Usulan Anda sedang menunggu persetujuan admin",
       contestVisibility: "Siapa yang bisa lihat kontes ini",
       visibleToEveryone: "Terlihat oleh semua orang",
-      visibleToSelected: "Hanya terlihat oleh"
+      visibleToSelected: "Hanya terlihat oleh",
+      temperature: "Suhu",
+      cold: "Dingin",
+      warm: "Hangat",
+      hot: "Panas",
+      allContacts: "Semua",
+      tagSomeone: "Tandai seseorang",
+      you: "kamu",
+      activityOpenedApp: "membuka aplikasi",
+      activityLoggedPoints: "mencatat aktivitas OCS",
+      activityAddedMaterial: "menambahkan materi baru",
+      activityAddedRoleplay: "menambahkan rekaman role play",
+      activityAddedContact: "menambahkan kontak baru"
     }
   };
   function useStorage(key, fallback, shared = false) {
@@ -817,15 +841,17 @@ window.addEventListener('load', function () {
   function ThemePicker({ mode, setMode, ambiance, setAmbiance, lang, setLang, onClose, t }) {
     return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }, onClick: onClose }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { background: "var(--surface)", borderRadius: "24px 24px 0 0", padding: 24, width: "100%", maxWidth: 480 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 4, background: "var(--hairline)", borderRadius: 2, margin: "0 auto 18px" } }), /* @__PURE__ */ React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", margin: "0 0 14px", color: "var(--text)" } }, t.appearance), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", marginBottom: 8 } }, t.language), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setLang("en"), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `2px solid ${lang === "en" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", cursor: "pointer" } }, "English"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setLang("id"), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `2px solid ${lang === "id" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", cursor: "pointer" } }, "Indonesia")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setMode("light"), style: { flex: 1, padding: "12px 0", borderRadius: 12, border: `2px solid ${mode === "light" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Sun, { size: 16 }), " ", t.light), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setMode("dark"), style: { flex: 1, padding: "12px 0", borderRadius: 12, border: `2px solid ${mode === "dark" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Moon, { size: 16 }), " ", t.dark)), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", marginBottom: 10 } }, t.ambiance), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 } }, Object.entries(AMBIANCES).map(([key, a]) => /* @__PURE__ */ React.createElement("button", { type: "button", key, onClick: () => setAmbiance(key), style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 40, borderRadius: "50%", background: a.tint, border: ambiance === key ? "3px solid var(--text)" : "3px solid transparent" } }), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 10.5, color: "var(--muted)" } }, a.name))))));
   }
-  function AdminPage({ me, token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, t, lang }) {
-    const [surpriseDraft, setSurpriseDraft] = useState({ recipientId: "", title: "", body: "", options: "" });
+  function AdminPage({ me, token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, t, lang }) {
+    const [surpriseDraft, setSurpriseDraft] = useState({ recipientId: "", title: "", body: "", options: "", file: null });
     const [surpriseBusy, setSurpriseBusy] = useState(false);
     const submitSurprise = async () => {
       if (!surpriseDraft.recipientId || !surpriseDraft.title.trim() || !surpriseDraft.body.trim()) return;
       setSurpriseBusy(true);
       try {
-        await sendSurpriseMessage(surpriseDraft.recipientId, surpriseDraft.title, surpriseDraft.body, surpriseDraft.options.split(",").map((s) => s.trim()).filter(Boolean));
-        setSurpriseDraft({ recipientId: "", title: "", body: "", options: "" });
+        let imageUrl = null;
+        if (surpriseDraft.file) imageUrl = await uploadMedia(surpriseDraft.file);
+        await sendSurpriseMessage(surpriseDraft.recipientId, surpriseDraft.title, surpriseDraft.body, surpriseDraft.options.split(",").map((s) => s.trim()).filter(Boolean), imageUrl);
+        setSurpriseDraft({ recipientId: "", title: "", body: "", options: "", file: null });
       } catch (e) {
         console.error("send surprise failed", e);
       } finally {
@@ -918,7 +944,7 @@ window.addEventListener('load', function () {
         if (pw && pw.length >= 6 && confirm("Set new password for " + u.name + "?")) manageUser(u.id, "reset_password", pw);
         else if (pw) alert("Password must be at least 6 characters.");
       }, title: "Reset password", style: { padding: 6, borderRadius: 8, border: "1px solid var(--hairline)", background: "transparent", color: "var(--muted)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Shield, { size: 13 }))))));
-    }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u2728", title: "Surprise Message" }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("select", { value: surpriseDraft.recipientId, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { recipientId: e.target.value })), style: inputStyle }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u2014"), team.map((u) => /* @__PURE__ */ React.createElement("option", { key: u.id, value: u.id }, u.name))), /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: surpriseDraft.title, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: surpriseDraft.body, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { body: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptOptions, value: surpriseDraft.options, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { options: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: surpriseBusy, onClick: submitSurprise, style: primaryBtn }, surpriseBusy ? "\u2026" : t.rpPost)), allSurprises.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, allSurprises.map((s) => /* @__PURE__ */ React.createElement("div", { key: s.id, style: { display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: "var(--text)" } }, s.recipientName, " \u2014 ", s.title), s.response && s.response.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--accent)" } }, t.answeredAs, " ", s.response.join(", "))), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: s.openedAt ? "var(--accent)" : "var(--muted)" } }, s.openedAt ? "\u2713 opened" : "unopened"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+    }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u2728", title: "Surprise Message" }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("select", { value: surpriseDraft.recipientId, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { recipientId: e.target.value })), style: inputStyle }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u2014"), team.map((u) => /* @__PURE__ */ React.createElement("option", { key: u.id, value: u.id }, u.name))), /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: surpriseDraft.title, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: surpriseDraft.body, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { body: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptOptions, value: surpriseDraft.options, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { options: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { file: e.target.files[0] || null })) }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: surpriseBusy, onClick: submitSurprise, style: primaryBtn }, surpriseBusy ? "\u2026" : t.rpPost)), allSurprises.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, allSurprises.map((s) => /* @__PURE__ */ React.createElement("div", { key: s.id, style: { display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: "var(--text)" } }, s.recipientName, " \u2014 ", s.title), s.response && s.response.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--accent)" } }, t.answeredAs, " ", s.response.join(", "))), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: s.openedAt ? "var(--accent)" : "var(--muted)" } }, s.openedAt ? "\u2713 opened" : "unopened"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       if (confirm(t.confirmDeleteUser)) deleteSurpriseMessage(s.id);
     }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0, marginLeft: 8 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))));
   }
@@ -1517,7 +1543,7 @@ window.addEventListener('load', function () {
       onRespond(selected);
       setResponded(true);
     };
-    return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, zIndex: 200, background: "radial-gradient(circle at 50% 30%, #3A2A4A 0%, #17101F 80%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 } }, !opened ? /* @__PURE__ */ React.createElement("div", { onClick: handleOpen, style: { cursor: "pointer", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 68, filter: "drop-shadow(0 0 20px rgba(232,163,61,0.6))" } }, "\u{1F48C}"), /* @__PURE__ */ React.createElement("div", { style: { color: "#FBF8F3", fontFamily: "'Fraunces', serif", fontSize: 19, marginTop: 14 } }, "A surprise message is waiting for you"), /* @__PURE__ */ React.createElement("div", { style: { color: "#E8A33D", fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8, letterSpacing: 1 } }, "\u2728 tap to open \u2728")) : /* @__PURE__ */ React.createElement("div", { style: { background: "#FBF8F3", borderRadius: 22, padding: 28, maxWidth: 380, width: "100%", textAlign: "center", boxShadow: "0 25px 70px rgba(0,0,0,0.5)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 40 } }, "\u{1F31F}"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'Fraunces', serif", fontSize: 21, fontWeight: 700, color: "#211F26", marginTop: 8 } }, surprise.title), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 14, color: "#4A4652", marginTop: 12, lineHeight: 1.6, whiteSpace: "pre-wrap" } }, surprise.body), !responded && surprise.responseOptions.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 20 } }, surprise.responseOptions.map((opt) => /* @__PURE__ */ React.createElement("button", { type: "button", key: opt, onClick: () => toggleOption(opt), style: { padding: "9px 16px", borderRadius: 999, border: selected.includes(opt) ? "2px solid #211F26" : "none", background: "#E8A33D", color: "#211F26", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" } }, selected.includes(opt) ? "\u2713 " : "", opt))), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: selected.length === 0, onClick: submitResponse, style: { marginTop: 14, padding: "9px 20px", borderRadius: 999, border: "none", background: selected.length ? "#211F26" : "#D8D4CC", color: "#fff", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, cursor: selected.length ? "pointer" : "default" } }, t.saveProfile)), responded && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 16, fontSize: 22 } }, "\u{1F49B}"), (responded || surprise.responseOptions.length === 0) && !reposted && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+    return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, zIndex: 200, background: "radial-gradient(circle at 50% 30%, #3A2A4A 0%, #17101F 80%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 } }, !opened ? /* @__PURE__ */ React.createElement("div", { onClick: handleOpen, style: { cursor: "pointer", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 68, filter: "drop-shadow(0 0 20px rgba(232,163,61,0.6))" } }, "\u{1F48C}"), /* @__PURE__ */ React.createElement("div", { style: { color: "#FBF8F3", fontFamily: "'Fraunces', serif", fontSize: 19, marginTop: 14 } }, "A surprise message is waiting for you"), /* @__PURE__ */ React.createElement("div", { style: { color: "#E8A33D", fontFamily: "Inter, sans-serif", fontSize: 13, marginTop: 8, letterSpacing: 1 } }, "\u2728 tap to open \u2728")) : /* @__PURE__ */ React.createElement("div", { style: { background: "#FBF8F3", borderRadius: 22, padding: 28, maxWidth: 380, width: "100%", textAlign: "center", boxShadow: "0 25px 70px rgba(0,0,0,0.5)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 40 } }, "\u{1F31F}"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'Fraunces', serif", fontSize: 21, fontWeight: 700, color: "#211F26", marginTop: 8 } }, surprise.title), surprise.imageUrl && /* @__PURE__ */ React.createElement("img", { src: surprise.imageUrl, alt: "", style: { width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 12, marginTop: 12 } }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 14, color: "#4A4652", marginTop: 12, lineHeight: 1.6, whiteSpace: "pre-wrap" } }, surprise.body), !responded && surprise.responseOptions.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 20 } }, surprise.responseOptions.map((opt) => /* @__PURE__ */ React.createElement("button", { type: "button", key: opt, onClick: () => toggleOption(opt), style: { padding: "9px 16px", borderRadius: 999, border: selected.includes(opt) ? "2px solid #211F26" : "none", background: "#E8A33D", color: "#211F26", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" } }, selected.includes(opt) ? "\u2713 " : "", opt))), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: selected.length === 0, onClick: submitResponse, style: { marginTop: 14, padding: "9px 20px", borderRadius: 999, border: "none", background: selected.length ? "#211F26" : "#D8D4CC", color: "#fff", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, cursor: selected.length ? "pointer" : "default" } }, t.saveProfile)), responded && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 16, fontSize: 22 } }, "\u{1F49B}"), (responded || surprise.responseOptions.length === 0) && !reposted && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       onRepost();
       setReposted(true);
     }, style: { marginTop: 14, display: "block", width: "100%", padding: "9px 0", borderRadius: 999, border: "1px solid #211F26", background: "transparent", color: "#211F26", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 12.5, cursor: "pointer" } }, t.repost), reposted && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 12, color: "#8C8C99" } }, "\u2713 ", t.repost), (responded || surprise.responseOptions.length === 0) && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { marginTop: 18, background: "none", border: "none", color: "#8C8C99", fontFamily: "Inter, sans-serif", fontSize: 12.5, cursor: "pointer" } }, t.close)));
@@ -1595,10 +1621,13 @@ window.addEventListener('load', function () {
       if (confirm(t.confirmDeleteUser)) deleteEvent(e.id);
     }, style: { marginTop: 8, background: "none", border: "none", color: "#E8846B", fontFamily: "Inter, sans-serif", fontSize: 11.5, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 11 }), " ", t.cancel)))));
   }
-  function SpotlightPage({ me, posts, addPost, uploadMedia, likes, toggleLike, comments, addComment, seen, markSeen: markSeenOnServer, t }) {
+  function SpotlightPage({ me, isAdmin, users, posts, addPost, editPost, deletePost, uploadMedia, likes, toggleLike, comments, addComment, seen, markSeen: markSeenOnServer, t }) {
+    const [editingPostId, setEditingPostId] = useState(null);
+    const [editPostDraft, setEditPostDraft] = useState("");
     const { isNew, markSeen: markSeenLocal } = useSeenTracker("spotlight");
-    const [draft, setDraft] = useState({ text: "", file: null });
+    const [draft, setDraft] = useState({ text: "", file: null, mentions: [] });
     const [posting, setPosting] = useState(false);
+    const [showTagPicker, setShowTagPicker] = useState(false);
     const [openCommentsId, setOpenCommentsId] = useState(null);
     const [commentDraft, setCommentDraft] = useState("");
     const seenRef = useRef(/* @__PURE__ */ new Set());
@@ -1608,8 +1637,8 @@ window.addEventListener('load', function () {
       try {
         let imageUrl = null;
         if (draft.file) imageUrl = await uploadMedia(draft.file);
-        await addPost(draft.text, imageUrl);
-        setDraft({ text: "", file: null });
+        await addPost(draft.text, imageUrl, draft.mentions);
+        setDraft({ text: "", file: null, mentions: [] });
       } catch (e) {
         console.error("spotlight post failed", e);
       } finally {
@@ -1623,12 +1652,21 @@ window.addEventListener('load', function () {
         markSeenOnServer(p.id);
       }
     };
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("textarea", { placeholder: t.chitChatPlaceholder, value: draft.text, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { text: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 60 }) }), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { file: e.target.files[0] || null })) }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: posting, onClick: submit, style: primaryBtn }, posting ? "\u2026" : t.rpPost))), posts.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: 20, fontFamily: "Inter, sans-serif", color: "var(--muted)", fontSize: 13 } }, t.rpNoPosts), posts.map((p) => {
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("textarea", { placeholder: t.chitChatPlaceholder, value: draft.text, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { text: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 60 }) }), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { file: e.target.files[0] || null })) }), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowTagPicker((s) => !s), style: { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 5, background: "none", border: "1px solid var(--hairline)", borderRadius: 999, padding: "5px 10px", color: "var(--muted)", fontFamily: "Inter, sans-serif", fontSize: 11.5, cursor: "pointer" } }, "@ ", t.tagSomeone, draft.mentions.length > 0 ? ` (${draft.mentions.length})` : ""), showTagPicker && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, users.filter((u) => u.id !== me.id).map((u) => /* @__PURE__ */ React.createElement("button", { type: "button", key: u.id, onClick: () => setDraft((d) => __spreadProps(__spreadValues({}, d), { mentions: d.mentions.includes(u.id) ? d.mentions.filter((x) => x !== u.id) : [...d.mentions, u.id] })), style: { padding: "5px 10px", borderRadius: 999, border: `1px solid ${draft.mentions.includes(u.id) ? "var(--accent)" : "var(--hairline)"}`, background: draft.mentions.includes(u.id) ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 11, cursor: "pointer" } }, "@", u.name))), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: posting, onClick: submit, style: primaryBtn }, posting ? "\u2026" : t.rpPost))), posts.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: 20, fontFamily: "Inter, sans-serif", color: "var(--muted)", fontSize: 13 } }, t.rpNoPosts), posts.map((p) => {
       const postLikes = likes[p.id] || [];
       const postComments = comments[p.id] || [];
       const postSeen = seen[p.id] || [];
       const iLiked = postLikes.some((l) => l.userId === me.id);
-      return /* @__PURE__ */ React.createElement(Card, { key: p.id, onClick: () => onView(p), style: { padding: 0, overflow: "hidden" } }, p.imageUrl && /* @__PURE__ */ React.createElement("img", { src: p.imageUrl, alt: "", style: { width: "100%", maxHeight: 260, objectFit: "cover", display: "block" } }), /* @__PURE__ */ React.createElement("div", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, color: "var(--text)" } }, p.ownerName, isNew(p.id, p.createdAt) && /* @__PURE__ */ React.createElement(NewBadge, null)), p.text && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)", marginTop: 4, lineHeight: 1.5 } }, p.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 16, marginTop: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
+      const iAmMentioned = (p.mentionedUserIds || []).includes(me.id);
+      return /* @__PURE__ */ React.createElement(Card, { key: p.id, onClick: () => onView(p), style: { padding: 0, overflow: "hidden", borderColor: iAmMentioned ? "var(--accent)" : void 0 } }, p.imageUrl && /* @__PURE__ */ React.createElement("img", { src: p.imageUrl, alt: "", style: { width: "100%", maxHeight: 260, objectFit: "cover", display: "block" } }), /* @__PURE__ */ React.createElement("div", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, color: "var(--text)" } }, p.ownerName, isNew(p.id, p.createdAt) && /* @__PURE__ */ React.createElement(NewBadge, null), iAmMentioned && /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 800, color: "var(--onAccent)", background: "var(--accent)", borderRadius: 999, padding: "1px 6px", marginLeft: 6 } }, "@", t.you)), (isAdmin || p.ownerId === me.id) && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 }, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        setEditingPostId(p.id);
+        setEditPostDraft(p.text || "");
+      }, style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Edit3, { size: 12 })), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        if (confirm(t.confirmDeleteUser)) deletePost(p.id);
+      }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })))), editingPostId === p.id ? /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 }, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("textarea", { value: editPostDraft, onChange: (e) => setEditPostDraft(e.target.value), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 50, fontSize: 13 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        editPost(p.id, editPostDraft);
+        setEditingPostId(null);
+      }, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12 }) }, t.saveProfile), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setEditingPostId(null), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12, background: "var(--hairline)", color: "var(--text)" }) }, t.cancel))) : /* @__PURE__ */ React.createElement(React.Fragment, null, p.text && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)", marginTop: 4, lineHeight: 1.5 } }, p.text), p.mentionedUserIds && p.mentionedUserIds.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11, color: "var(--accent)", marginTop: 4 } }, "@", users.filter((u) => p.mentionedUserIds.includes(u.id)).map((u) => u.name).join(", @"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 16, marginTop: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
         e.stopPropagation();
         toggleLike(p.id);
       }, style: { display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: iLiked ? "#E8846B" : "var(--muted)", cursor: "pointer", padding: 0, fontFamily: "Inter, sans-serif", fontSize: 12.5 } }, /* @__PURE__ */ React.createElement(Heart, { size: 14 }), " ", postLikes.length > 0 ? postLikes.length : ""), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
@@ -1654,7 +1692,9 @@ window.addEventListener('load', function () {
     const visibleUsers = canSeeOthers ? users.filter((u) => u.id === me.id || u.leader_id === me.id || me.role === "admin") : [me];
     const myChecklist = checklists[me.id] || [];
     const [todo, setTodo] = useState("");
-    const viewedContacts = contacts[viewingUserId] || [];
+    const [tempFilter, setTempFilter] = useState("all");
+    const viewedContactsRaw = contacts[viewingUserId] || [];
+    const viewedContacts = tempFilter === "all" ? viewedContactsRaw : viewedContactsRaw.filter((c) => c.temperature === tempFilter);
     const [newContact, setNewContact] = useState({ name: "", bio: "" });
     const [expandedContact, setExpandedContact] = useState(null);
     const [meetingDraft, setMeetingDraft] = useState({ date: todayISO(), notes: "", conclusion: "" });
@@ -1671,11 +1711,17 @@ window.addEventListener('load', function () {
       const list = contacts[me.id] || [];
       setContacts(__spreadProps(__spreadValues({}, contacts), { [me.id]: [...list, { id: uid(), name: newContact.name, status: "not-contacted", bio: newContact.bio, meetings: [] }] }));
       setNewContact({ name: "", bio: "" });
-    }, style: primaryBtn }, t.addContact))), viewedContacts.map((c) => {
+    }, style: primaryBtn }, t.addContact))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, [["all", "\xB7", t.allContacts], ["cold", "\u2744\uFE0F", t.cold], ["warm", "\u2600\uFE0F", t.warm], ["hot", "\u{1F525}", t.hot]].map(([key, emoji, label]) => /* @__PURE__ */ React.createElement("button", { type: "button", key, onClick: () => setTempFilter(key), style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "7px 0", borderRadius: 999, border: `1px solid ${tempFilter === key ? "var(--accent)" : "var(--hairline)"}`, background: tempFilter === key ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 11.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("span", null, emoji), " ", label))), viewedContacts.map((c) => {
       const isExpanded = expandedContact === c.id;
       const bioLong = c.bio && c.bio.length > 140;
       const bioShown = expandBio[c.id] ? c.bio : bioLong ? c.bio.slice(0, 140) + "\u2026" : c.bio;
-      return /* @__PURE__ */ React.createElement(Card, { key: c.id }, /* @__PURE__ */ React.createElement("div", { onClick: () => setExpandedContact(isExpanded ? null : c.id), style: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" } }, c.name), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, isOwnContacts && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
+      return /* @__PURE__ */ React.createElement(Card, { key: c.id }, /* @__PURE__ */ React.createElement("div", { onClick: () => setExpandedContact(isExpanded ? null : c.id), style: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, isOwnContacts ? /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
+        e.stopPropagation();
+        const order = [null, "cold", "warm", "hot"];
+        const nextTemp = order[(order.indexOf(c.temperature) + 1) % order.length];
+        const list = contacts[me.id].map((x) => x.id === c.id ? __spreadProps(__spreadValues({}, x), { temperature: nextTemp }) : x);
+        setContacts(__spreadProps(__spreadValues({}, contacts), { [me.id]: list }));
+      }, title: t.temperature, style: { background: "none", border: "1px solid var(--hairline)", borderRadius: 999, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 } }, c.temperature === "cold" ? "\u2744\uFE0F" : c.temperature === "warm" ? "\u2600\uFE0F" : c.temperature === "hot" ? "\u{1F525}" : "\xB7") : c.temperature && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13 } }, c.temperature === "cold" ? "\u2744\uFE0F" : c.temperature === "warm" ? "\u2600\uFE0F" : "\u{1F525}"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" } }, c.name)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, isOwnContacts && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
         e.stopPropagation();
         const list = contacts[me.id].map((x) => x.id === c.id ? __spreadProps(__spreadValues({}, x), { status: x.status === "contacted" ? "not-contacted" : "contacted" }) : x);
         setContacts(__spreadProps(__spreadValues({}, contacts), { [me.id]: list }));
@@ -1777,6 +1823,16 @@ window.addEventListener('load', function () {
       });
     }, [session, page]);
     useEffect(() => {
+      if (!session || !session.profile) return;
+      (async () => {
+        try {
+          await sbRest("app_opens", { method: "POST", token: session.token, prefer: "return=minimal", body: { user_id: session.profile.id } });
+          await sbRest("spotlight_posts", { method: "POST", token: session.token, prefer: "return=minimal", body: { owner_id: session.profile.id, text: `${session.profile.name} ${t.activityOpenedApp}`, is_activity: true } });
+        } catch (e) {
+        }
+      })();
+    }, [session && session.profile && session.profile.id]);
+    useEffect(() => {
       if (!session) return;
       const token = session.token;
       (async () => {
@@ -1817,7 +1873,7 @@ window.addEventListener('load', function () {
           const groupedContacts = {};
           contactRows.forEach((r) => {
             const list = groupedContacts[r.owner_id] || (groupedContacts[r.owner_id] = []);
-            list.push({ id: r.id, name: r.name, status: r.status, bio: r.bio, meetings: (r.contact_meetings || []).map((m) => ({ id: m.id, date: m.date, notes: m.notes, conclusion: m.conclusion })) });
+            list.push({ id: r.id, name: r.name, status: r.status, bio: r.bio, temperature: r.temperature || null, meetings: (r.contact_meetings || []).map((m) => ({ id: m.id, date: m.date, notes: m.notes, conclusion: m.conclusion })) });
           });
           setContactsState(groupedContacts);
           const groupedChecklists = {};
@@ -1840,7 +1896,7 @@ window.addEventListener('load', function () {
           });
           setQaAnswers(groupedAnswers);
           setEvents(eventRows.map((r) => ({ id: r.id, title: r.title, description: r.description, imageUrl: r.image_url, date: r.event_date, startTime: r.start_time, endTime: r.end_time, createdBy: r.created_by, createdByName: nameById[r.created_by] || "", status: r.status, targetUserIds: r.target_user_ids, createdAt: new Date(r.created_at).getTime(), isPublic: r.is_public })));
-          setSpotlightPosts(spotlightRows.map((r) => ({ id: r.id, ownerId: r.owner_id, ownerName: nameById[r.owner_id] || "", text: r.text, imageUrl: r.image_url, createdAt: new Date(r.created_at).getTime(), sourceSurpriseId: r.source_surprise_id })));
+          setSpotlightPosts(spotlightRows.map((r) => ({ id: r.id, ownerId: r.owner_id, ownerName: nameById[r.owner_id] || "", text: r.text, imageUrl: r.image_url, createdAt: new Date(r.created_at).getTime(), sourceSurpriseId: r.source_surprise_id, mentionedUserIds: r.mentioned_user_ids || null })));
           const groupedLikes = {};
           spotlightLikeRows.forEach((r) => {
             (groupedLikes[r.post_id] || (groupedLikes[r.post_id] = [])).push({ id: r.id, userId: r.user_id, userName: nameById[r.user_id] || "" });
@@ -1859,8 +1915,8 @@ window.addEventListener('load', function () {
           setBoardPosts(boardRows.map((r) => ({ id: r.id, title: r.title, text: r.text, imageUrl: r.image_url, fileUrl: r.file_url, linkedAnnouncementId: r.linked_announcement_id, createdAt: new Date(r.created_at).getTime() })));
           setRecurringEvents(recurringRows.map((r) => ({ id: r.id, title: r.title, description: r.description, dayOfWeek: r.day_of_week, startTime: r.start_time, endTime: r.end_time })));
           const mySurpriseRow = surpriseRows.find((r) => r.recipient_id === me.id && !r.opened_at);
-          setMySurprise(mySurpriseRow ? { id: mySurpriseRow.id, title: mySurpriseRow.title, body: mySurpriseRow.body, responseOptions: mySurpriseRow.response_options || [] } : null);
-          setAllSurprises(surpriseRows.map((r) => ({ id: r.id, recipientId: r.recipient_id, recipientName: nameById[r.recipient_id] || "", title: r.title, body: r.body, responseOptions: r.response_options || [], response: r.response, openedAt: r.opened_at, createdAt: new Date(r.created_at).getTime() })));
+          setMySurprise(mySurpriseRow ? { id: mySurpriseRow.id, title: mySurpriseRow.title, body: mySurpriseRow.body, responseOptions: mySurpriseRow.response_options || [], imageUrl: mySurpriseRow.image_url || null } : null);
+          setAllSurprises(surpriseRows.map((r) => ({ id: r.id, recipientId: r.recipient_id, recipientName: nameById[r.recipient_id] || "", title: r.title, body: r.body, responseOptions: r.response_options || [], response: r.response, openedAt: r.opened_at, createdAt: new Date(r.created_at).getTime(), imageUrl: r.image_url || null })));
           setWeeklyPromptState(promptRows[0] ? { id: promptRows[0].id, categoryEn: promptRows[0].category_en, categoryId: promptRows[0].category_id, options: promptRows[0].options || [] } : null);
           const groupedProfileComments = {};
           commentRows.forEach((r) => {
@@ -1917,6 +1973,15 @@ window.addEventListener('load', function () {
       } catch (e) {
       }
     };
+    const logActivity = async (label) => {
+      try {
+        const rows = await sbRest("spotlight_posts", { method: "POST", token: session.token, prefer: "return=representation", body: { owner_id: me.id, text: `${me.name} ${label}`, is_activity: true } });
+        const real = rows[0];
+        if (real) setSpotlightPosts((prev) => [{ id: real.id, ownerId: me.id, ownerName: me.name, text: `${me.name} ${label}`, imageUrl: null, createdAt: Date.now(), isActivity: true }, ...prev]);
+      } catch (e) {
+        console.error("logActivity failed", e);
+      }
+    };
     const addPoints = async (userId, pts, reason, notes) => {
       const localId = uid();
       const entry = { id: localId, userId, points: pts, reason, date: todayISO(), notes: notes || "" };
@@ -1929,6 +1994,7 @@ window.addEventListener('load', function () {
         const target = team.find((u) => u.id === userId);
         const newPoints = ((target == null ? void 0 : target.points) || 0) + pts;
         await sbRest(`profiles?id=eq.${userId}`, { method: "PATCH", token: session.token, body: { points: newPoints }, prefer: "return=minimal" });
+        if (userId === me.id) logActivity(t.activityLoggedPoints);
       } catch (e) {
         console.error("addPoints failed", e);
       }
@@ -1985,6 +2051,7 @@ window.addEventListener('load', function () {
       setMaterialsState([...materials, __spreadProps(__spreadValues({}, m), { status, submittedBy: me.id, submittedByName: me.name })]);
       try {
         await sbRest("materials", { method: "POST", token: session.token, prefer: "return=minimal", body: { id: m.id, category: m.category, subtype: m.subtype, title: m.title, content_type: m.contentType, body: m.body, tags: m.tags, links: m.links, external_url: m.externalUrl || null, status, submitted_by: me.id } });
+        if (status === "approved") logActivity(t.activityAddedMaterial);
       } catch (e) {
         console.error("addMaterial failed", e);
       }
@@ -2087,13 +2154,21 @@ window.addEventListener('load', function () {
           for (const c of nextList) {
             const prevC = prevList.find((p) => p.id === c.id);
             if (!prevC) {
-              const rows = await sbRest("contacts", { method: "POST", token: session.token, prefer: "return=representation", body: { owner_id: me.id, name: c.name, status: c.status, bio: c.bio } });
+              const rows = await sbRest("contacts", { method: "POST", token: session.token, prefer: "return=representation", body: { owner_id: me.id, name: c.name, status: c.status, bio: c.bio, temperature: c.temperature || null } });
               const real = rows[0];
               if (real && real.id !== c.id) {
                 setContactsState((prev) => __spreadProps(__spreadValues({}, prev), { [me.id]: (prev[me.id] || []).map((x) => x.id === c.id ? __spreadProps(__spreadValues({}, x), { id: real.id }) : x) }));
               }
-            } else if (prevC.status !== c.status) {
-              await sbRest(`contacts?id=eq.${c.id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body: { status: c.status } });
+              logActivity(t.activityAddedContact);
+            } else {
+              const patch = {};
+              if (prevC.status !== c.status) patch.status = c.status;
+              if (prevC.name !== c.name) patch.name = c.name;
+              if (prevC.bio !== c.bio) patch.bio = c.bio;
+              if (prevC.temperature !== c.temperature) patch.temperature = c.temperature || null;
+              if (Object.keys(patch).length > 0) {
+                await sbRest(`contacts?id=eq.${c.id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body: patch });
+              }
             }
             const prevMeetings = prevC ? prevC.meetings : [];
             const newMeetings = (c.meetings || []).filter((m) => !prevMeetings.find((pm) => pm.id === m.id));
@@ -2140,6 +2215,7 @@ window.addEventListener('load', function () {
       const real = rows[0];
       if (real) {
         setRoleplayPosts((prev) => [...prev, { id: real.id, ownerId: me.id, ownerName: me.name, title, description, mediaType, mediaUrl: `${SUPABASE_URL}/storage/v1/object/public/roleplay/${path}`, createdAt: Date.now() }]);
+        logActivity(t.activityAddedRoleplay);
       }
     };
     const editRoleplayPost = async (id, patch) => {
@@ -2208,10 +2284,28 @@ window.addEventListener('load', function () {
         console.error("deleteEvent failed", e);
       }
     };
-    const addSpotlightPost = async (text, imageUrl, sourceSurpriseId) => {
-      const rows = await sbRest("spotlight_posts", { method: "POST", token: session.token, prefer: "return=representation", body: { owner_id: me.id, text, image_url: imageUrl || null, source_surprise_id: sourceSurpriseId || null } });
+    const addSpotlightPost = async (text, imageUrl, opts) => {
+      const sourceSurpriseId = opts && opts.sourceSurpriseId || null;
+      const mentionedUserIds = opts && Array.isArray(opts) ? opts : opts && opts.mentionedUserIds || null;
+      const rows = await sbRest("spotlight_posts", { method: "POST", token: session.token, prefer: "return=representation", body: { owner_id: me.id, text, image_url: imageUrl || null, source_surprise_id: sourceSurpriseId, mentioned_user_ids: mentionedUserIds && mentionedUserIds.length ? mentionedUserIds : null } });
       const real = rows[0];
-      if (real) setSpotlightPosts((prev) => [{ id: real.id, ownerId: me.id, ownerName: me.name, text, imageUrl: imageUrl || null, createdAt: Date.now(), sourceSurpriseId: sourceSurpriseId || null }, ...prev]);
+      if (real) setSpotlightPosts((prev) => [{ id: real.id, ownerId: me.id, ownerName: me.name, text, imageUrl: imageUrl || null, createdAt: Date.now(), sourceSurpriseId, mentionedUserIds: mentionedUserIds || null }, ...prev]);
+    };
+    const editSpotlightPost = async (id, text) => {
+      setSpotlightPosts((prev) => prev.map((p) => p.id === id ? __spreadProps(__spreadValues({}, p), { text }) : p));
+      try {
+        await sbRest(`spotlight_posts?id=eq.${id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body: { text } });
+      } catch (e) {
+        console.error("editSpotlightPost failed", e);
+      }
+    };
+    const deleteSpotlightPost = async (id) => {
+      setSpotlightPosts((prev) => prev.filter((p) => p.id !== id));
+      try {
+        await sbRest(`spotlight_posts?id=eq.${id}`, { method: "DELETE", token: session.token, prefer: "return=minimal" });
+      } catch (e) {
+        console.error("deleteSpotlightPost failed", e);
+      }
     };
     const toggleSpotlightLike = async (postId) => {
       const mine = (spotlightLikes[postId] || []).find((l) => l.userId === me.id);
@@ -2302,10 +2396,10 @@ window.addEventListener('load', function () {
         console.error("deleteQuestionItem failed", e);
       }
     };
-    const sendSurpriseMessage = async (recipientId, title, body, responseOptions) => {
-      const rows = await sbRest("surprise_messages", { method: "POST", token: session.token, prefer: "return=representation", body: { recipient_id: recipientId, title, body, response_options: responseOptions, created_by: me.id } });
+    const sendSurpriseMessage = async (recipientId, title, body, responseOptions, imageUrl) => {
+      const rows = await sbRest("surprise_messages", { method: "POST", token: session.token, prefer: "return=representation", body: { recipient_id: recipientId, title, body, response_options: responseOptions, created_by: me.id, image_url: imageUrl || null } });
       const real = rows[0];
-      if (real) setAllSurprises((prev) => [{ id: real.id, recipientId, recipientName: (team.find((u) => u.id === recipientId) || {}).name || "", title, body, responseOptions, response: null, openedAt: null, createdAt: Date.now() }, ...prev]);
+      if (real) setAllSurprises((prev) => [{ id: real.id, recipientId, recipientName: (team.find((u) => u.id === recipientId) || {}).name || "", title, body, responseOptions, response: null, openedAt: null, createdAt: Date.now(), imageUrl: imageUrl || null }, ...prev]);
     };
     const deleteSurpriseMessage = async (id) => {
       setAllSurprises((prev) => prev.filter((s) => s.id !== id));
@@ -2446,7 +2540,7 @@ window.addEventListener('load', function () {
         onClose: () => setActiveSurprise(null),
         onRepost: () => addSpotlightPost(`\u2728 ${activeSurprise.title}
 
-${activeSurprise.body}`, null, activeSurprise.id),
+${activeSurprise.body}`, null, { sourceSurpriseId: activeSurprise.id }),
         t
       }
     ), /* @__PURE__ */ React.createElement("style", null, `
@@ -2457,7 +2551,7 @@ ${activeSurprise.body}`, null, activeSurprise.id),
       `), /* @__PURE__ */ React.createElement(TopNav, { page, setPage: goToPage, tabs, setShowThemePicker, hasNew }), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 560, margin: "0 auto", padding: "8px 16px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setSession(null), style: { display: "flex", alignItems: "center", gap: 5, fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)", background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(LogOut, { size: 12 }), " ", t.signOut)), page === "home" && /* @__PURE__ */ React.createElement(Home_, { me, users: team, isAdmin, announcements, pointsLog, events, boardPosts, postBoardAnnouncement, deleteBoardPost, uploadMedia, setPage: goToPage, onOpenOcs: (id) => {
       setPendingOcsView(id);
       goToPage("people");
-    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, posts: spotlightPosts, addPost: addSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, checklists, setChecklists, addEvent, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }));
+    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, isAdmin, users: team, posts: spotlightPosts, addPost: addSpotlightPost, editPost: editSpotlightPost, deletePost: deleteSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, checklists, setChecklists, addEvent, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }));
   }
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(/* @__PURE__ */ React.createElement(App, null));
