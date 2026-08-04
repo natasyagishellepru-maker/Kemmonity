@@ -1571,31 +1571,66 @@ window.addEventListener('load', function () {
     }, style: { marginTop: 14, display: "block", width: "100%", padding: "9px 0", borderRadius: 999, border: "1px solid #211F26", background: "transparent", color: "#211F26", fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 12.5, cursor: "pointer" } }, t.repost), reposted && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, fontFamily: "Inter, sans-serif", fontSize: 12, color: "#8C8C99" } }, "\u2713 ", t.repost), (responded || surprise.responseOptions.length === 0) && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { marginTop: 18, background: "none", border: "none", color: "#8C8C99", fontFamily: "Inter, sans-serif", fontSize: 12.5, cursor: "pointer" } }, t.close)));
   }
   function ProgressPage({ me, users, isAdmin, progressLogs, addProgressLog, updateProgressLog, deleteProgressLog, t, lang }) {
-    const [memberId, setMemberId] = useState(isAdmin ? "" : me.id);
+    const roleById = {};
+    users.forEach((u) => {
+      roleById[u.id] = u.role;
+    });
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [showForm, setShowForm] = useState(false);
+    const [date, setDate] = useState(todayISO());
+    const [everyone, setEveryone] = useState(false);
+    const [attendeeIds, setAttendeeIds] = useState([]);
     const [notes, setNotes] = useState("");
     const [nextStep, setNextStep] = useState("");
-    const [visibility, setVisibility] = useState("everyone");
-    const [visibleTo, setVisibleTo] = useState([]);
     const [busy, setBusy] = useState(false);
-    const toggleVisibleUser = (id) => {
-      setVisibleTo((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+    const otherUsers = users.filter((u) => u.id !== me.id);
+    const toggleAttendee = (id) => {
+      setEveryone(false);
+      setAttendeeIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+    };
+    const pickEveryone = () => {
+      setEveryone(true);
+      setAttendeeIds([]);
+    };
+    const resetForm = () => {
+      setDate(todayISO());
+      setEveryone(false);
+      setAttendeeIds([]);
+      setNotes("");
+      setNextStep("");
+      setShowForm(false);
     };
     const submit = async () => {
-      if (!memberId || !notes.trim()) return;
+      if (!notes.trim() || (!everyone && attendeeIds.length === 0)) return;
       setBusy(true);
       try {
-        await addProgressLog({ memberId, notes: notes.trim(), nextStep: nextStep.trim(), visibility, visibleTo: visibility === "private" ? visibleTo : [] });
-        setNotes("");
-        setNextStep("");
-        setVisibility("everyone");
-        setVisibleTo([]);
+        await addProgressLog({ date, notes: notes.trim(), nextStep: nextStep.trim(), visibility: everyone ? "everyone" : "private", attendees: everyone ? [] : attendeeIds });
+        resetForm();
       } catch (e) {
         console.error("addProgressLog failed", e);
       }
       setBusy(false);
     };
-    const visibleLogs = progressLogs.filter((p) => p.visibility === "everyone" || p.createdBy === me.id || p.memberId === me.id || isAdmin || (p.visibleTo || []).includes(me.id));
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { title: t.progress || "Progress" }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, isAdmin && /* @__PURE__ */ React.createElement("select", { value: memberId, onChange: (e) => setMemberId(e.target.value), style: inputStyle }, /* @__PURE__ */ React.createElement("option", { value: "" }, t.selectMember || "Select person"), users.map((u) => /* @__PURE__ */ React.createElement("option", { key: u.id, value: u.id }, u.name))), /* @__PURE__ */ React.createElement("textarea", { value: notes, onChange: (e) => setNotes(e.target.value), placeholder: t.meetingNotes || "What did we discuss?", style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 60 }) }), /* @__PURE__ */ React.createElement("textarea", { value: nextStep, onChange: (e) => setNextStep(e.target.value), placeholder: t.nextStep || "Next step", style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 44 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, [["everyone", t.visibleEveryone || "Everyone"], ["private", t.visibleSelect || "Selected people"]].map(([val, label]) => /* @__PURE__ */ React.createElement("button", { type: "button", key: val, onClick: () => setVisibility(val), style: { flex: 1, padding: "9px 0", borderRadius: 10, border: `1px solid ${visibility === val ? "var(--accent)" : "var(--hairline)"}`, background: visibility === val ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer" } }, label))), visibility === "private" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, users.filter((u) => u.id !== me.id).map((u) => /* @__PURE__ */ React.createElement("button", { type: "button", key: u.id, onClick: () => toggleVisibleUser(u.id), style: { padding: "6px 10px", borderRadius: 999, border: `1px solid ${visibleTo.includes(u.id) ? "var(--accent)" : "var(--hairline)"}`, background: visibleTo.includes(u.id) ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12, cursor: "pointer" } }, u.name))), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: busy || !memberId || !notes.trim(), onClick: submit, style: __spreadProps(__spreadValues({}, primaryBtn), { opacity: busy ? 0.7 : 1 }) }, busy ? "\u2026" : t.logMeeting || "Log meeting"))), visibleLogs.map((p) => /* @__PURE__ */ React.createElement(Card, { key: p.id }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, color: "var(--text)" } }, p.memberName), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: "var(--muted)" } }, p.date, " \xB7 ", p.visibility === "private" ? "\u{1F512}" : "\u{1F465}")), p.notes && /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", lineHeight: 1.5, margin: "0 0 6px" } }, p.notes), p.nextStep && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--accent)", background: "var(--tint)", borderRadius: 8, padding: "6px 10px", marginBottom: 6 } }, (t.nextStep || "Next step") + ": " + p.nextStep), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => updateProgressLog(p.id, { status: p.status === "done" ? "in_progress" : "done" }), style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: p.status === "done" ? "var(--accent)" : "var(--muted)", background: "none", border: "1px solid var(--hairline)", borderRadius: 999, padding: "4px 10px", cursor: "pointer" } }, p.status === "done" ? "\u2713 " + (t.done || "Done") : t.markDone || "Mark done"), (p.createdBy === me.id || isAdmin) && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => deleteProgressLog(p.id), style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "#E8846B", background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 }))))));
+    const permittedLogs = progressLogs.filter((p) => p.visibility === "everyone" || p.createdBy === me.id || isAdmin || (p.attendees || []).includes(me.id));
+    const visibleLogs = !isAdmin || roleFilter === "all" ? permittedLogs : permittedLogs.filter((p) => p.visibility === "everyone" || (p.attendees || []).some((id) => roleById[id] === roleFilter));
+    const attendeeLabel = (p) => {
+      if (p.visibility === "everyone") return t.visibleEveryone || "Everyone";
+      return (p.attendees || []).map((id) => (users.find((u) => u.id === id) || {}).name).filter(Boolean).join(", ");
+    };
+    const roleTabs = !isAdmin ? null : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, [["all", t.allPeople || "All"], ["partner", TIERS.partner.label[lang]], ["leader", TIERS.leader.label[lang]]].map(([val, label]) => {
+      return /* @__PURE__ */ React.createElement("button", { type: "button", key: val, onClick: () => setRoleFilter(val), style: { flex: 1, padding: "8px 0", borderRadius: 10, border: `1px solid ${roleFilter === val ? "var(--accent)" : "var(--hairline)"}`, background: roleFilter === val ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, label);
+    }));
+    const header = /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600, color: "var(--text)" } }, t.progress || "Progress"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowForm((s) => !s), style: { width: 34, height: 34, borderRadius: "50%", border: "none", background: "var(--accent)", color: "var(--onAccent)", fontSize: 18, lineHeight: "34px", padding: 0, cursor: "pointer" } }, showForm ? "\xD7" : "+"));
+    const attendeePicker = /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: pickEveryone, style: { padding: "6px 12px", borderRadius: 999, border: `1px solid ${everyone ? "var(--accent)" : "var(--hairline)"}`, background: everyone ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, t.visibleEveryone || "Everyone"), otherUsers.map((u) => {
+      return /* @__PURE__ */ React.createElement("button", { type: "button", key: u.id, onClick: () => toggleAttendee(u.id), style: { padding: "6px 12px", borderRadius: 999, border: `1px solid ${attendeeIds.includes(u.id) ? "var(--accent)" : "var(--hairline)"}`, background: attendeeIds.includes(u.id) ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12, cursor: "pointer" } }, u.name);
+    }));
+    const formCard = !showForm ? null : /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { type: "date", value: date, onChange: (e) => setDate(e.target.value), style: inputStyle }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)" } }, t.meetingWith || "Meeting with"), attendeePicker, /* @__PURE__ */ React.createElement("textarea", { value: notes, onChange: (e) => setNotes(e.target.value), placeholder: t.meetingNotes || "What did we discuss?", style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 56 }) }), /* @__PURE__ */ React.createElement("textarea", { value: nextStep, onChange: (e) => setNextStep(e.target.value), placeholder: t.nextStep || "Next step", style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 40 }) }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: busy || !notes.trim() || (!everyone && attendeeIds.length === 0), onClick: submit, style: __spreadProps(__spreadValues({}, primaryBtn), { opacity: busy ? 0.7 : 1 }) }, busy ? "\u2026" : t.logMeeting || "Log meeting")));
+    const emptyState = visibleLogs.length > 0 ? null : /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", textAlign: "center", padding: "20px 0" } }, t.noMeetingsYet || "No meetings logged yet");
+    const logRows = visibleLogs.map((p) => {
+      const canManage = p.createdBy === me.id || isAdmin;
+      return /* @__PURE__ */ React.createElement("div", { key: p.id, style: { background: "var(--surface)", border: "1px solid var(--hairline)", borderRadius: 14, padding: "12px 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, color: "var(--text)" } }, attendeeLabel(p)), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: "var(--muted)" } }, p.date, " ", p.visibility === "private" ? "\u{1F512}" : "\u{1F465}")), p.notes ? /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", lineHeight: 1.5, margin: "0 0 6px" } }, p.notes) : null, p.nextStep ? /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--accent)", background: "var(--tint)", borderRadius: 8, padding: "6px 10px", marginBottom: 6, display: "inline-block" } }, (t.nextStep || "Next step") + ": " + p.nextStep) : null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => updateProgressLog(p.id, { status: p.status === "done" ? "in_progress" : "done" }), style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: p.status === "done" ? "var(--accent)" : "var(--muted)", background: "none", border: "1px solid var(--hairline)", borderRadius: 999, padding: "4px 10px", cursor: "pointer" } }, p.status === "done" ? "\u2713 " + (t.done || "Done") : t.markDone || "Mark done"), canManage ? /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => deleteProgressLog(p.id), style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "#E8846B", background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 })) : null));
+    });
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10 } }, roleTabs, header, formCard, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, emptyState, logRows));
   }
   function CalendarPage({ me, users, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }) {
     const [calView, setCalView] = useState("team");
@@ -1971,7 +2006,7 @@ window.addEventListener('load', function () {
           setSpotlightSeen(groupedSeen);
           setBoardPosts(boardRows.map((r) => ({ id: r.id, title: r.title, text: r.text, imageUrl: r.image_url, fileUrl: r.file_url, linkedAnnouncementId: r.linked_announcement_id, createdAt: new Date(r.created_at).getTime() })));
           setRecurringEvents(recurringRows.map((r) => ({ id: r.id, title: r.title, description: r.description, dayOfWeek: r.day_of_week, startTime: r.start_time, endTime: r.end_time })));
-          setProgressLogs((progressRows || []).map((r) => ({ id: r.id, memberId: r.member_id, memberName: nameById[r.member_id] || "", createdBy: r.created_by, createdByName: nameById[r.created_by] || "", date: r.date, notes: r.notes, nextStep: r.next_step, status: r.status, visibility: r.visibility, visibleTo: r.visible_to || [], createdAt: new Date(r.created_at).getTime() })));
+          setProgressLogs((progressRows || []).map((r) => ({ id: r.id, createdBy: r.created_by, createdByName: nameById[r.created_by] || "", date: r.date, notes: r.notes, nextStep: r.next_step, status: r.status, visibility: r.visibility, attendees: r.attendees || [], createdAt: new Date(r.created_at).getTime() })));
           const mySurpriseRow = surpriseRows.find((r) => r.recipient_id === me.id && !r.opened_at);
           setMySurprise(mySurpriseRow ? { id: mySurpriseRow.id, title: mySurpriseRow.title, body: mySurpriseRow.body, responseOptions: mySurpriseRow.response_options || [], imageUrl: mySurpriseRow.image_url || null } : null);
           setAllSurprises(surpriseRows.map((r) => ({ id: r.id, recipientId: r.recipient_id, recipientName: nameById[r.recipient_id] || "", title: r.title, body: r.body, responseOptions: r.response_options || [], response: r.response, openedAt: r.opened_at, createdAt: new Date(r.created_at).getTime(), imageUrl: r.image_url || null })));
@@ -2353,12 +2388,11 @@ window.addEventListener('load', function () {
       }
     };
     const addProgressLog = async (log) => {
-      const body = { member_id: log.memberId, created_by: me.id, date: log.date || todayISO(), notes: log.notes || null, next_step: log.nextStep || null, status: log.status || "in_progress", visibility: log.visibility || "everyone", visible_to: log.visibility === "private" ? log.visibleTo || [] : [] };
+      const body = { created_by: me.id, date: log.date || todayISO(), notes: log.notes || null, next_step: log.nextStep || null, status: log.status || "in_progress", visibility: log.visibility || "everyone", attendees: log.visibility === "private" ? log.attendees || [] : [] };
       const rows = await sbRest("progress_logs", { method: "POST", token: session.token, prefer: "return=representation", body });
       const real = rows[0];
       if (real) {
-        const memberName = (team.find((u) => u.id === log.memberId) || {}).name || "";
-        setProgressLogs((prev) => [{ id: real.id, memberId: log.memberId, memberName, createdBy: me.id, createdByName: me.name, date: real.date, notes: real.notes, nextStep: real.next_step, status: real.status, visibility: real.visibility, visibleTo: real.visible_to || [], createdAt: new Date(real.created_at).getTime() }, ...prev]);
+        setProgressLogs((prev) => [{ id: real.id, createdBy: me.id, createdByName: me.name, date: real.date, notes: real.notes, nextStep: real.next_step, status: real.status, visibility: real.visibility, attendees: real.attendees || [], createdAt: new Date(real.created_at).getTime() }, ...prev]);
       }
     };
     const updateProgressLog = async (id, patch) => {
@@ -2369,7 +2403,7 @@ window.addEventListener('load', function () {
         if (patch.nextStep !== void 0) body.next_step = patch.nextStep;
         if (patch.status !== void 0) body.status = patch.status;
         if (patch.visibility !== void 0) body.visibility = patch.visibility;
-        if (patch.visibleTo !== void 0) body.visible_to = patch.visibleTo;
+        if (patch.attendees !== void 0) body.attendees = patch.attendees;
         await sbRest(`progress_logs?id=eq.${id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body });
       } catch (e) {
         console.error("updateProgressLog failed", e);
