@@ -280,6 +280,21 @@ window.addEventListener('load', function () {
     { key: "prudential_links", en: "Prudential Links", id: "Tautan Prudential", icon: Globe },
     { key: "table", en: "Table", id: "Tabel", icon: TableIcon }
   ];
+  const RATING_CRITERIA = [
+    { key: "confidence", en: "Confidence & Delivery", id: "Percaya Diri & Penyampaian" },
+    { key: "knowledge", en: "Product Knowledge", id: "Pengetahuan Produk" },
+    { key: "connection", en: "Connection", id: "Koneksi" },
+    { key: "objection", en: "Handling Objections", id: "Menangani Keberatan" },
+    { key: "creativity", en: "Creativity", id: "Kreativitas" },
+    { key: "closing", en: "Call to Action / Closing", id: "Ajakan / Penutupan" }
+  ];
+  const RATING_MAX_TOTAL = RATING_CRITERIA.length * 10;
+  const ANIMAL_IDENTITIES = [
+    { name: "Dog", emoji: "\u{1F436}" }, { name: "Cat", emoji: "\u{1F431}" }, { name: "Fox", emoji: "\u{1F98A}" },
+    { name: "Owl", emoji: "\u{1F989}" }, { name: "Bear", emoji: "\u{1F43B}" }, { name: "Wolf", emoji: "\u{1F43A}" },
+    { name: "Rabbit", emoji: "\u{1F430}" }, { name: "Tiger", emoji: "\u{1F42F}" }, { name: "Lion", emoji: "\u{1F981}" },
+    { name: "Panda", emoji: "\u{1F43C}" }, { name: "Koala", emoji: "\u{1F428}" }, { name: "Deer", emoji: "\u{1F98C}" }
+  ];
   const PRODUCT_SUBTYPES = [
     { key: "how-to-sell", en: "How to sell it", id: "Cara menjual" },
     { key: "about", en: "About the product", id: "Tentang produk" },
@@ -339,7 +354,14 @@ window.addEventListener('load', function () {
     } catch (e) {
     }
   }
-  const todayISO = () => (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const localDateISO = (d) => {
+    const dt = d || /* @__PURE__ */ new Date();
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const day = String(dt.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  const todayISO = () => localDateISO();
   const getContestProgress = (a, userId, pointsLog, createdAt) => {
     const startMs = createdAt || 0;
     const earned = (pointsLog || []).filter((p) => p.userId === userId && new Date(p.date).getTime() >= startMs).reduce((sum, p) => sum + p.points, 0);
@@ -354,9 +376,10 @@ window.addEventListener('load', function () {
     const d = /* @__PURE__ */ new Date();
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
+    const monday = new Date(d);
+    monday.setDate(diff);
     monday.setHours(0, 0, 0, 0);
-    return monday.toISOString().slice(0, 10);
+    return localDateISO(monday);
   };
   const T = {
     en: {
@@ -1000,7 +1023,7 @@ window.addEventListener('load', function () {
     const year = now.getFullYear(), month = now.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr = now.toISOString().slice(0, 10);
+    const todayStr = localDateISO(now);
     const eventDates = new Set(events.map((e) => e.date));
     const monthName = now.toLocaleDateString(void 0, { month: "long", year: "numeric" });
     const cells = [];
@@ -1020,7 +1043,7 @@ window.addEventListener('load', function () {
     const recentPoints = pointsLog.filter((p) => p.userId === me.id).slice(-3).reverse();
     const myPoints = pointsLog.filter((p) => p.userId === me.id);
     const weekStart = startOfWeekISO();
-    const monthStart = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7) + "-01";
+    const monthStart = localDateISO().slice(0, 7) + "-01";
     const totalThisWeek = myPoints.filter((p) => p.date >= weekStart).reduce((s, p) => s + p.points, 0);
     const totalThisMonth = myPoints.filter((p) => p.date >= monthStart).reduce((s, p) => s + p.points, 0);
     const totalAllTime = myPoints.reduce((s, p) => s + p.points, 0);
@@ -1222,14 +1245,15 @@ window.addEventListener('load', function () {
       }, style: __spreadProps(__spreadValues({}, primaryBtn), { padding: "0 16px" }) }, /* @__PURE__ */ React.createElement(Send, { size: 14 }))), matQuestions.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, matQuestions.map((q) => /* @__PURE__ */ React.createElement("div", { key: q.id, style: { display: "flex", gap: 8, alignItems: "flex-start", background: "var(--tint)", opacity: 0.9, borderRadius: 10, padding: 10 } }, /* @__PURE__ */ React.createElement(Bookmark, { size: 13, color: "var(--onAccent)", style: { marginTop: 2, flexShrink: 0 } }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--onAccent)" } }, q.text), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "var(--onAccent)", opacity: 0.75, marginTop: 3 } }, "\u2014 ", q.userName)))))));
     }));
   }
-  function QALibrary({ qa, addQA, materialQuestions, materials, setPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaSummary, updateQaSummary, t, lang }) {
+  function QALibrary({ qa, addQA, materialQuestions, materials, setPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaQuestionSummaries, updateQuestionSummary, t, lang }) {
     const { isNew, markSeen } = useSeenTracker("qa");
     const [query, setQuery] = useState("");
     const [showAdd, setShowAdd] = useState(false);
     const [draft, setDraft] = useState({ question: "", answer: "", tags: "", category: "concept" });
     const [answerDraft, setAnswerDraft] = useState({});
-    const [editingSummary, setEditingSummary] = useState(false);
-    const [summaryDraft, setSummaryDraft] = useState((qaSummary && qaSummary.text) || "");
+    const [editingSummaryId, setEditingSummaryId] = useState(null);
+    const [summaryDraft, setSummaryDraft] = useState("");
+    const getSummary = (id) => (qaQuestionSummaries && qaQuestionSummaries[id] && qaQuestionSummaries[id].text) || "";
     const likeCount = (targetType, targetId) => (qaLikes || []).filter((l) => l.targetType === targetType && l.targetId === targetId).length;
     const iLiked = (targetType, targetId) => (qaLikes || []).some((l) => l.targetType === targetType && l.targetId === targetId && l.userId === me.id);
     const merged = useMemo(() => {
@@ -1246,13 +1270,7 @@ window.addEventListener('load', function () {
       const q = query.toLowerCase();
       return (materials || []).filter((m) => m.title.toLowerCase().includes(q) || m.body.toLowerCase().includes(q)).slice(0, 8);
     }, [materials, query]);
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u{1F4CB}", title: t.objectionsSummary || "Summary", right: isAdmin && !editingSummary ? /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
-      setSummaryDraft((qaSummary && qaSummary.text) || "");
-      setEditingSummary(true);
-    }, style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Edit3, { size: 14 })) : null }), editingSummary ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("textarea", { value: summaryDraft, onChange: (e) => setSummaryDraft(e.target.value), placeholder: t.objectionsSummary || "Summary", style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
-      updateQaSummary(summaryDraft.trim());
-      setEditingSummary(false);
-    }, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1 }) }, t.saveProfile || "Save"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setEditingSummary(false), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, background: "var(--hairline)", color: "var(--text)" }) }, t.cancel))) : qaSummary && qaSummary.text ? /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" } }, qaSummary.text) : /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)" } }, "\u2014")), /* @__PURE__ */ React.createElement("div", { style: { position: "relative" } }, /* @__PURE__ */ React.createElement(Search, { size: 16, style: { position: "absolute", left: 14, top: 14, color: "var(--muted)" } }), /* @__PURE__ */ React.createElement("input", { value: query, onChange: (e) => setQuery(e.target.value), placeholder: t.searchObjections, style: { width: "100%", padding: "13px 14px 13px 40px", borderRadius: 14, border: "1px solid var(--hairline)", background: "var(--surface)", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 14 } })), crossMaterials.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase" } }, t.materials), crossMaterials.map((m) => /* @__PURE__ */ React.createElement("div", { key: m.id, onClick: () => setPage && setPage("materials"), style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: "var(--tint)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(BookOpen, { size: 13, color: "var(--accent)" }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--text)" } }, m.title)))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowAdd((s) => !s), style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px 0", borderRadius: 14, border: "1px dashed var(--accent)", background: "transparent", color: "var(--accent)", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Plus, { size: 15 }), " ", showAdd ? t.cancel : t.askOrAdd), showAdd && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: draft.question, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { question: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: draft.answer, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { answer: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("select", { value: draft.category, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { category: e.target.value })), style: inputStyle }, CATEGORIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c.key, value: c.key }, c[lang]))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { position: "relative" } }, /* @__PURE__ */ React.createElement(Search, { size: 16, style: { position: "absolute", left: 14, top: 14, color: "var(--muted)" } }), /* @__PURE__ */ React.createElement("input", { value: query, onChange: (e) => setQuery(e.target.value), placeholder: t.searchObjections, style: { width: "100%", padding: "13px 14px 13px 40px", borderRadius: 14, border: "1px solid var(--hairline)", background: "var(--surface)", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 14 } })), crossMaterials.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase" } }, t.materials), crossMaterials.map((m) => /* @__PURE__ */ React.createElement("div", { key: m.id, onClick: () => setPage && setPage("materials"), style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: "var(--tint)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(BookOpen, { size: 13, color: "var(--accent)" }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--text)" } }, m.title)))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowAdd((s) => !s), style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px 0", borderRadius: 14, border: "1px dashed var(--accent)", background: "transparent", color: "var(--accent)", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Plus, { size: 15 }), " ", showAdd ? t.cancel : t.askOrAdd), showAdd && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: draft.question, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { question: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: draft.answer, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { answer: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("select", { value: draft.category, onChange: (e) => setDraft(__spreadProps(__spreadValues({}, draft), { category: e.target.value })), style: inputStyle }, CATEGORIES.map((c) => /* @__PURE__ */ React.createElement("option", { key: c.key, value: c.key }, c[lang]))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       if (!draft.question.trim()) return;
       addQA(__spreadProps(__spreadValues({ id: "qa-" + uid() }, draft), { tags: draft.tags.split(",").map((s) => s.trim()).filter(Boolean) }));
       setDraft({ question: "", answer: "", tags: "", category: "concept" });
@@ -1272,7 +1290,13 @@ window.addEventListener('load', function () {
       }, style: { marginTop: 4, marginLeft: canToggleUrgent ? 10 : 0, background: "none", border: "none", color: iLiked("question", x.id) ? "var(--accent)" : "var(--muted)", fontFamily: "Inter, sans-serif", fontSize: 11, cursor: "pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 3 } }, /* @__PURE__ */ React.createElement(Heart, { size: 11 }), " ", likeCount("question", x.id) || ""), x.answer && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--muted)", marginTop: 5, lineHeight: 1.55 } }, x.answer), itemAnswers.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, display: "grid", gap: 6 } }, itemAnswers.map((a) => /* @__PURE__ */ React.createElement("div", { key: a.id, style: { background: "var(--tint)", borderRadius: 10, padding: "8px 10px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)" } }, a.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11, color: "var(--muted)" } }, t.answeredBy, " ", a.userName), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: (e) => {
         e.stopPropagation();
         toggleQaLike("answer", a.id);
-      }, style: { background: "none", border: "none", color: iLiked("answer", a.id) ? "var(--accent)" : "var(--muted)", fontFamily: "Inter, sans-serif", fontSize: 11, cursor: "pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 3 } }, /* @__PURE__ */ React.createElement(Heart, { size: 11 }), " ", likeCount("answer", a.id) || ""))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8 } }, /* @__PURE__ */ React.createElement("input", { value: answerDraft[x.id] || "", onChange: (e) => setAnswerDraft(__spreadProps(__spreadValues({}, answerDraft), { [x.id]: e.target.value })), placeholder: t.addAnswer, onKeyDown: (e) => {
+      }, style: { background: "none", border: "none", color: iLiked("answer", a.id) ? "var(--accent)" : "var(--muted)", fontFamily: "Inter, sans-serif", fontSize: 11, cursor: "pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 3 } }, /* @__PURE__ */ React.createElement(Heart, { size: 11 }), " ", likeCount("answer", a.id) || ""))))), (isAdmin || getSummary(x.id)) && /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { marginTop: 8, background: "var(--tint)", borderRadius: 10, padding: "8px 10px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, letterSpacing: 0.5, color: "var(--accent)", textTransform: "uppercase" } }, t.objectionsSummary || "Summary"), isAdmin && editingSummaryId !== x.id && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        setSummaryDraft(getSummary(x.id));
+        setEditingSummaryId(x.id);
+      }, style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Edit3, { size: 12 }))), editingSummaryId === x.id ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6, marginTop: 6 } }, /* @__PURE__ */ React.createElement("textarea", { value: summaryDraft, onChange: (e) => setSummaryDraft(e.target.value), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 50, fontSize: 12.5, padding: "7px 9px" }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        updateQuestionSummary(x.id, summaryDraft.trim());
+        setEditingSummaryId(null);
+      }, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12 }) }, t.saveProfile || "Save"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setEditingSummaryId(null), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12, background: "var(--hairline)", color: "var(--text)" }) }, t.cancel))) : getSummary(x.id) ? /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--text)", lineHeight: 1.5, margin: "4px 0 0", whiteSpace: "pre-wrap" } }, getSummary(x.id)) : isAdmin ? /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginTop: 4 } }, "\u2014") : null), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8 } }, /* @__PURE__ */ React.createElement("input", { value: answerDraft[x.id] || "", onChange: (e) => setAnswerDraft(__spreadProps(__spreadValues({}, answerDraft), { [x.id]: e.target.value })), placeholder: t.addAnswer, onKeyDown: (e) => {
         if (e.key === "Enter" && (answerDraft[x.id] || "").trim()) {
           addQaAnswer(x.id, answerDraft[x.id].trim());
           setAnswerDraft(__spreadProps(__spreadValues({}, answerDraft), { [x.id]: "" }));
@@ -1293,7 +1317,7 @@ window.addEventListener('load', function () {
     const entries = pointsLog.filter((p) => p.userId === person.id).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     const todayStr = todayISO();
     const weekStart = startOfWeekISO();
-    const monthStart = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7) + "-01";
+    const monthStart = localDateISO().slice(0, 7) + "-01";
     const groups = [
       { label: "Today", items: entries.filter((p) => p.date === todayStr) },
       { label: "This week", items: entries.filter((p) => p.date < todayStr && p.date >= weekStart) },
@@ -1438,8 +1462,8 @@ window.addEventListener('load', function () {
     const answers = person.answers || {};
     const answered = !!answers[promptKey];
     const comments = profileComments && profileComments[person.id] || [];
-    const todayStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    const reactions = (profileReactions && profileReactions[person.id] || []).filter((r) => new Date(r.createdAt).toISOString().slice(0, 10) === todayStr);
+    const todayStr = localDateISO();
+    const reactions = (profileReactions && profileReactions[person.id] || []).filter((r) => localDateISO(new Date(r.createdAt)) === todayStr);
     const reactionCounts = useMemo(() => {
       const c = {};
       reactions.forEach((r) => {
@@ -1560,7 +1584,7 @@ window.addEventListener('load', function () {
       }
     }, style: __spreadProps(__spreadValues({}, primaryBtn), { padding: "0 14px" }) }, /* @__PURE__ */ React.createElement(Send, { size: 13 })))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--accent)", textTransform: "uppercase" } }, t.thisWeek), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" } }, lang === "en" ? prompt2.categoryEn : prompt2.categoryId)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowPromptEdit((s) => !s), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Edit3, { size: 14 })), /* @__PURE__ */ React.createElement(Heart, { size: 18, color: "var(--accent)" }))), showPromptEdit && isAdmin && /* @__PURE__ */ React.createElement("div", { style: { background: "var(--tint)", borderRadius: 14, padding: 14, marginBottom: 12, display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { placeholder: t.promptCategoryEn, value: promptDraft.en, onChange: (e) => setPromptDraft(__spreadProps(__spreadValues({}, promptDraft), { en: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptCategoryId, value: promptDraft.id, onChange: (e) => setPromptDraft(__spreadProps(__spreadValues({}, promptDraft), { id: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptOptions, value: promptDraft.options, onChange: (e) => setPromptDraft(__spreadProps(__spreadValues({}, promptDraft), { options: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submitPrompt, style: primaryBtn }, t.saveAndPublish)), isMe ? answered ? /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)" } }, t.answeredAs, " ", /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--text)" } }, answers[promptKey]), " \u2014 ", t.keptSecret) : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)" } }, t.answerForYourself), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, prompt2.options.map((opt) => /* @__PURE__ */ React.createElement("button", { type: "button", key: opt, onClick: () => updateMe({ answers: __spreadProps(__spreadValues({}, answers), { [promptKey]: opt }) }), style: { padding: "8px 14px", borderRadius: 999, border: "1px solid var(--hairline)", background: "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer" } }, opt)))) : !answered ? /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)" } }, person.name, " ", t.notAnswered) : !showGame ? /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setShowGame(true), style: primaryBtn }, t.tapToGuess) : guess === null ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, prompt2.options.map((opt) => /* @__PURE__ */ React.createElement("button", { type: "button", key: opt, onClick: () => setGuess(opt), style: { padding: "8px 14px", borderRadius: 999, border: "1px solid var(--hairline)", background: "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer" } }, opt))) : /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: 10 } }, guess === answers[promptKey] ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 26 } }, "\u{1F389}"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'Fraunces', serif", fontSize: 16, color: "var(--text)" } }, t.correct, " ", person.name, t.aBit)) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 22 } }, "\u{1F914}"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--muted)" } }, t.notQuite)))));
   }
-  function RolePlay({ me, isAdmin, posts, addPost, editPost, deletePost, comments, addComment, t }) {
+  function RolePlay({ me, isAdmin, users, posts, addPost, editPost, deletePost, comments, addComment, ratings, addRating, editRating, deleteRating, t }) {
     const [editingPost, setEditingPost] = useState(false);
     const [editDraft, setEditDraft] = useState({ title: "", description: "" });
     const { isNew, markSeen } = useSeenTracker("roleplay");
@@ -1569,6 +1593,9 @@ window.addEventListener('load', function () {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState("");
     const [commentDraft, setCommentDraft] = useState("");
+    const [ratingDraft, setRatingDraft] = useState(null);
+    const [pickingAnimal, setPickingAnimal] = useState(false);
+    const [unmask, setUnmask] = useState(false);
     const playerRef = useRef(null);
     const openPost = posts.find((p) => p.id === view);
     const fmtTime = (s) => {
@@ -1605,12 +1632,39 @@ window.addEventListener('load', function () {
         playerRef.current.play();
       }
     };
+    const postRatings = openPost ? (ratings || []).filter((r) => r.postId === openPost.id) : [];
+    const myRating = openPost ? postRatings.find((r) => r.raterId === me.id) : null;
+    const avgTotal = postRatings.length ? Math.round(postRatings.reduce((s, r) => s + r.total, 0) / postRatings.length * 10) / 10 : null;
+    const nameById = (id) => { var _a2; return ((_a2 = (users || []).find((u) => u.id === id)) == null ? void 0 : _a2.name) || "?"; };
+    const startNewRating = () => {
+      setRatingDraft({ animalName: "", scores: Object.fromEntries(RATING_CRITERIA.map((c) => [c.key, 5])) });
+      setPickingAnimal(true);
+    };
+    const startEditRating = (r) => {
+      setRatingDraft({ id: r.id, animalName: r.animalName, scores: __spreadValues({}, r.scores) });
+      setPickingAnimal(false);
+    };
+    const submitRating = () => {
+      if (!ratingDraft || !ratingDraft.animalName) return;
+      const total = RATING_CRITERIA.reduce((s, c) => s + (Number(ratingDraft.scores[c.key]) || 0), 0);
+      if (ratingDraft.id) editRating(ratingDraft.id, ratingDraft.animalName, ratingDraft.scores, total);
+      else addRating(openPost.id, ratingDraft.animalName, ratingDraft.scores, total);
+      setRatingDraft(null);
+    };
     const backBtn = { display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--muted)", fontFamily: "Inter, sans-serif", fontSize: 13, cursor: "pointer", marginBottom: 14, padding: 0 };
     if (view === "upload") {
       return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setView("list"), style: backBtn }, /* @__PURE__ */ React.createElement(ChevronRight, { size: 14, style: { transform: "rotate(180deg)" } }), " ", t.roleplay), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("input", { placeholder: t.rpTitle, value: uploadForm.title, onChange: (e) => setUploadForm(__spreadProps(__spreadValues({}, uploadForm), { title: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 10 }) }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.rpDescription, value: uploadForm.description, onChange: (e) => setUploadForm(__spreadProps(__spreadValues({}, uploadForm), { description: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70, marginBottom: 10 }) }), /* @__PURE__ */ React.createElement("label", { style: { display: "block", fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)", marginBottom: 8 } }, uploadForm.file ? uploadForm.file.name : t.rpChooseFile, /* @__PURE__ */ React.createElement("input", { type: "file", accept: "video/*,audio/*", onChange: (e) => setUploadForm(__spreadProps(__spreadValues({}, uploadForm), { file: e.target.files[0] || null })), style: { display: "block", marginTop: 6 } })), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)", margin: "6px 0" } }, t.roleplayLink), /* @__PURE__ */ React.createElement("input", { placeholder: "https://\u2026", value: uploadForm.link, onChange: (e) => setUploadForm(__spreadProps(__spreadValues({}, uploadForm), { link: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 10 }) }), uploadError && /* @__PURE__ */ React.createElement("div", { style: { color: "#E8846B", fontSize: 12.5, marginBottom: 10 } }, uploadError), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: uploading, onClick: submitUpload, style: __spreadProps(__spreadValues({}, primaryBtn), { opacity: uploading ? 0.7 : 1 }) }, uploading ? "\u2026" : t.rpPost)));
     }
     if (openPost) {
       const postComments = (comments[openPost.id] || []).slice().sort((a, b) => a.timestampSeconds - b.timestampSeconds);
+      const animalLabel = (name) => { const a = ANIMAL_IDENTITIES.find((x) => x.name === name); return (a ? a.emoji + " " : "") + name; };
+      const ratingRow = (r) => /* @__PURE__ */ React.createElement("div", { key: r.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)" } }, animalLabel(r.animalName), isAdmin && unmask && /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 10.5, color: "var(--muted)", marginLeft: 6 } }, "(", nameById(r.raterId), ")")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: "var(--accent)" } }, r.total, "/", RATING_MAX_TOTAL), r.raterId === me.id && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => startEditRating(r), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Edit3, { size: 12 })), (r.raterId === me.id || isAdmin) && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+        if (confirm(t.confirmDeleteUser)) deleteRating(r.id);
+      }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 12 }))));
+      const ratingSection = /* @__PURE__ */ React.createElement(Card, { style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)" } }, "\u2B50 Rating", avgTotal !== null && ` \xB7 avg ${avgTotal}/${RATING_MAX_TOTAL}`), isAdmin && postRatings.length > 0 && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setUnmask((s) => !s), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 11 } }, unmask ? /* @__PURE__ */ React.createElement(EyeOff, { size: 13 }) : /* @__PURE__ */ React.createElement(Eye, { size: 13 }), unmask ? "hide names" : "unmask")), postRatings.length === 0 && !ratingDraft && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", marginBottom: 8 } }, "No ratings yet"), postRatings.map(ratingRow), ratingDraft ? /* @__PURE__ */ React.createElement("div", { style: { marginTop: 10, display: "grid", gap: 8 } }, pickingAnimal && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)" } }, "Pick who you'll be shown as:"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, ANIMAL_IDENTITIES.map((a) => /* @__PURE__ */ React.createElement("button", { type: "button", key: a.name, onClick: () => {
+        setRatingDraft(__spreadProps(__spreadValues({}, ratingDraft), { animalName: a.name }));
+        setPickingAnimal(false);
+      }, style: { padding: "6px 10px", borderRadius: 999, border: ratingDraft.animalName === a.name ? "2px solid var(--accent)" : "1px solid var(--hairline)", background: "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12.5, cursor: "pointer" } }, a.emoji, " ", a.name)))), ratingDraft.animalName && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)" } }, "Rating as ", /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--text)" } }, ratingDraft.animalName), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setPickingAnimal(true), style: { background: "none", border: "none", color: "var(--accent)", cursor: "pointer", padding: 0, fontSize: 11.5 } }, "change")), RATING_CRITERIA.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.key, style: { display: "grid", gap: 3 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--text)" } }, /* @__PURE__ */ React.createElement("span", null, c.en), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)", fontWeight: 700 } }, ratingDraft.scores[c.key])), /* @__PURE__ */ React.createElement("input", { type: "range", min: 1, max: 10, value: ratingDraft.scores[c.key], onChange: (e) => setRatingDraft(__spreadProps(__spreadValues({}, ratingDraft), { scores: __spreadProps(__spreadValues({}, ratingDraft.scores), { [c.key]: Number(e.target.value) }) })), style: { width: "100%" } }))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: 700, color: "var(--text)" } }, /* @__PURE__ */ React.createElement("span", null, "Total"), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--accent)" } }, RATING_CRITERIA.reduce((s, c) => s + (Number(ratingDraft.scores[c.key]) || 0), 0), "/", RATING_MAX_TOTAL)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submitRating, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1 }) }, t.saveProfile || "Save"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setRatingDraft(null), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, background: "var(--hairline)", color: "var(--text)" }) }, t.cancel)))) : !myRating && openPost.ownerId !== me.id ? /* @__PURE__ */ React.createElement("button", { type: "button", onClick: startNewRating, style: __spreadProps(__spreadValues({}, primaryBtn), { marginTop: 6 }) }, "Rate this video") : null);
       return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setView("list"), style: backBtn }, /* @__PURE__ */ React.createElement(ChevronRight, { size: 14, style: { transform: "rotate(180deg)" } }), " ", t.roleplay), editingPost ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8, marginBottom: 12 } }, /* @__PURE__ */ React.createElement("input", { value: editDraft.title, onChange: (e) => setEditDraft(__spreadProps(__spreadValues({}, editDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { value: editDraft.description, onChange: (e) => setEditDraft(__spreadProps(__spreadValues({}, editDraft), { description: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 55 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
         editPost(openPost.id, editDraft);
         setEditingPost(false);
@@ -1622,7 +1676,7 @@ window.addEventListener('load', function () {
           deletePost(openPost.id);
           setView("list");
         }
-      }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })))), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, t.rpBy, " ", openPost.ownerName), openPost.description && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)", marginBottom: 12 } }, openPost.description)), openPost.mediaType === "link" ? /* @__PURE__ */ React.createElement("a", { href: openPost.linkUrl, target: "_blank", rel: "noopener noreferrer", style: { display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 14, marginBottom: 16, background: "var(--tint)", color: "var(--accent)", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, textDecoration: "none" } }, /* @__PURE__ */ React.createElement(Globe, { size: 16 }), " ", openPost.linkUrl) : openPost.mediaType === "video" ? /* @__PURE__ */ React.createElement("video", { ref: playerRef, src: openPost.mediaUrl, controls: true, style: { width: "100%", borderRadius: 14, marginBottom: 16, background: "#000" } }) : /* @__PURE__ */ React.createElement("audio", { ref: playerRef, src: openPost.mediaUrl, controls: true, style: { width: "100%", marginBottom: 16 } }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 8 } }, t.rpComments), postComments.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.id, onClick: () => jumpTo(c.timestampSeconds), style: { cursor: "pointer", padding: "8px 0", borderBottom: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)", fontSize: 11, fontWeight: 700 } }, fmtTime(c.timestampSeconds)), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", marginLeft: 8 } }, /* @__PURE__ */ React.createElement("strong", null, c.userName), ": ", c.text))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } }, /* @__PURE__ */ React.createElement("input", { value: commentDraft, onChange: (e) => setCommentDraft(e.target.value), placeholder: t.rpAddComment, style: __spreadProps(__spreadValues({}, inputStyle), { flex: 1 }), onKeyDown: (e) => e.key === "Enter" && submitComment() }), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submitComment, style: __spreadProps(__spreadValues({}, primaryBtn), { padding: "0 16px" }) }, /* @__PURE__ */ React.createElement(Send, { size: 14 }))));
+      }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 14 })))), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, t.rpBy, " ", openPost.ownerName), openPost.description && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)", marginBottom: 12 } }, openPost.description)), openPost.mediaType === "link" ? /* @__PURE__ */ React.createElement("a", { href: openPost.linkUrl, target: "_blank", rel: "noopener noreferrer", style: { display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 14, marginBottom: 16, background: "var(--tint)", color: "var(--accent)", fontFamily: "Inter, sans-serif", fontWeight: 600, fontSize: 13.5, textDecoration: "none" } }, /* @__PURE__ */ React.createElement(Globe, { size: 16 }), " ", openPost.linkUrl) : openPost.mediaType === "video" ? /* @__PURE__ */ React.createElement("video", { ref: playerRef, src: openPost.mediaUrl, controls: true, style: { width: "100%", borderRadius: 14, marginBottom: 16, background: "#000" } }) : /* @__PURE__ */ React.createElement("audio", { ref: playerRef, src: openPost.mediaUrl, controls: true, style: { width: "100%", marginBottom: 16 } }), ratingSection, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 8 } }, t.rpComments), postComments.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.id, onClick: () => jumpTo(c.timestampSeconds), style: { cursor: "pointer", padding: "8px 0", borderBottom: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", color: "var(--accent)", fontSize: 11, fontWeight: 700 } }, fmtTime(c.timestampSeconds)), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", marginLeft: 8 } }, /* @__PURE__ */ React.createElement("strong", null, c.userName), ": ", c.text))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } }, /* @__PURE__ */ React.createElement("input", { value: commentDraft, onChange: (e) => setCommentDraft(e.target.value), placeholder: t.rpAddComment, style: __spreadProps(__spreadValues({}, inputStyle), { flex: 1 }), onKeyDown: (e) => e.key === "Enter" && submitComment() }), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submitComment, style: __spreadProps(__spreadValues({}, primaryBtn), { padding: "0 16px" }) }, /* @__PURE__ */ React.createElement(Send, { size: 14 }))));
     }
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setView("upload"), style: __spreadProps(__spreadValues({}, primaryBtn), { marginBottom: 16 }) }, /* @__PURE__ */ React.createElement(Plus, { size: 15 }), " ", t.rpUpload), posts.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--muted)" } }, t.rpNoPosts), posts.slice().sort((a, b) => b.createdAt - a.createdAt).map((p) => /* @__PURE__ */ React.createElement(Card, { key: p.id, style: { cursor: "pointer", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { onClick: () => {
       setView(p.id);
@@ -1734,7 +1788,7 @@ window.addEventListener('load', function () {
       const n = /* @__PURE__ */ new Date();
       return { year: n.getFullYear(), month: n.getMonth() };
     });
-    const [selectedDate, setSelectedDate] = useState((/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
+    const [selectedDate, setSelectedDate] = useState(localDateISO());
     const [showForm, setShowForm] = useState(false);
     const [showRecurring, setShowRecurring] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -1744,7 +1798,7 @@ window.addEventListener('load', function () {
     const firstDay = new Date(cursor.year, cursor.month, 1).getDay();
     const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
     const monthName = new Date(cursor.year, cursor.month, 1).toLocaleDateString(void 0, { month: "long", year: "numeric" });
-    const todayStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const todayStr = localDateISO();
     const eventsByDate = useMemo(() => {
       const m = {};
       visibleEvents.forEach((e) => {
@@ -2034,6 +2088,7 @@ window.addEventListener('load', function () {
     const [checklists, setChecklistsState] = useState({});
     const [roleplayPosts, setRoleplayPosts] = useState([]);
     const [roleplayComments, setRoleplayComments] = useState({});
+    const [roleplayRatings, setRoleplayRatings] = useState([]);
     const [qaAnswers, setQaAnswers] = useState({});
     const [events, setEvents] = useState([]);
     const [spotlightPosts, setSpotlightPosts] = useState([]);
@@ -2048,7 +2103,7 @@ window.addEventListener('load', function () {
     const [progressLogs, setProgressLogs] = useState([]);
     const [appOpens, setAppOpens] = useState([]);
     const [qaLikes, setQaLikes] = useState([]);
-    const [qaSummary, setQaSummary] = useState(null);
+    const [qaQuestionSummaries, setQaQuestionSummaries] = useState({});
     const [reactionToast, setReactionToast] = useState(null);
     const lastReactionCheckRef = useRef(null);
     const [mySurprise, setMySurprise] = useState(null);
@@ -2118,7 +2173,7 @@ window.addEventListener('load', function () {
       const token = session.token;
       (async () => {
         try {
-          const [matRows, qaRows, annRows, ptsRows, teamRows, qRows, contactRows, checklistRows, rpRows, rpCommentRows, qaAnswerRows, eventRows, spotlightRows, boardRows, promptRows, commentRows, reactionRows, recurringRows, surpriseRows, spotlightLikeRows, spotlightCommentRows, spotlightSeenRows, progressRows, appOpenRows, qaLikeRows, qaSummaryRows] = await Promise.all([
+          const [matRows, qaRows, annRows, ptsRows, teamRows, qRows, contactRows, checklistRows, rpRows, rpCommentRows, qaAnswerRows, eventRows, spotlightRows, boardRows, promptRows, commentRows, reactionRows, recurringRows, surpriseRows, spotlightLikeRows, spotlightCommentRows, spotlightSeenRows, progressRows, appOpenRows, qaLikeRows, qaQuestionSummaryRows, roleplayRatingRows] = await Promise.all([
             sbRest("materials?select=*", { token }),
             sbRest("qa_library?select=*", { token }),
             sbRest("announcements?select=*", { token }),
@@ -2144,7 +2199,8 @@ window.addEventListener('load', function () {
             sbRest("progress_logs?select=*&order=created_at.desc", { token }).catch(() => []),
             sbRest("app_opens?select=*", { token }).catch(() => []),
             sbRest("qa_likes?select=*", { token }).catch(() => []),
-            sbRest("qa_summary?select=*&limit=1", { token }).catch(() => [])
+            sbRest("qa_question_summaries?select=*", { token }).catch(() => []),
+            sbRest("roleplay_ratings?select=*", { token }).catch(() => [])
           ]);
           setQAState(qaRows.map((r) => ({ id: r.id, question: r.question, answer: r.answer, category: r.category, tags: r.tags || [], createdAt: new Date(r.created_at).getTime() })));
           setAnnouncementsState(annRows.map((r) => ({ id: r.id, title: r.title, description: r.description, metric: r.metric, goal: r.goal, reward: r.reward, active: r.active, winnerName: r.winner_name || "", deadline: r.deadline || null, createdAt: new Date(r.created_at).getTime(), targetUserIds: r.target_user_ids || null })));
@@ -2203,8 +2259,12 @@ window.addEventListener('load', function () {
           setProgressLogs((progressRows || []).map((r) => ({ id: r.id, createdBy: r.created_by, createdByName: nameById[r.created_by] || "", date: r.date, notes: r.notes, nextStep: r.next_step, status: r.status, visibility: r.visibility, attendees: r.attendees || [], createdAt: new Date(r.created_at).getTime() })));
           setAppOpens((appOpenRows || []).map((r) => ({ userId: r.user_id, date: r.opened_date })));
           setQaLikes((qaLikeRows || []).map((r) => ({ id: r.id, targetType: r.target_type, targetId: r.target_id, userId: r.user_id })));
-          const summaryRow = (qaSummaryRows || [])[0];
-          setQaSummary(summaryRow ? { text: summaryRow.text || "", updatedBy: summaryRow.updated_by, updatedAt: summaryRow.updated_at } : { text: "", updatedBy: null, updatedAt: null });
+          const qsMap = {};
+          (qaQuestionSummaryRows || []).forEach((r) => {
+            qsMap[r.question_id] = { text: r.text || "", updatedBy: r.updated_by, updatedAt: r.updated_at };
+          });
+          setQaQuestionSummaries(qsMap);
+          setRoleplayRatings((roleplayRatingRows || []).map((r) => ({ id: r.id, postId: r.post_id, raterId: r.rater_id, animalName: r.animal_name, scores: r.scores || {}, total: r.total, createdAt: r.created_at, updatedAt: r.updated_at })));
           const mySurpriseRow = surpriseRows.find((r) => r.recipient_id === me.id && !r.opened_at);
           setMySurprise(mySurpriseRow ? { id: mySurpriseRow.id, title: mySurpriseRow.title, body: mySurpriseRow.body, responseOptions: mySurpriseRow.response_options || [], imageUrl: mySurpriseRow.image_url || null } : null);
           setAllSurprises(surpriseRows.map((r) => ({ id: r.id, recipientId: r.recipient_id, recipientName: nameById[r.recipient_id] || "", title: r.title, body: r.body, responseOptions: r.response_options || [], response: r.response, openedAt: r.opened_at, createdAt: new Date(r.created_at).getTime(), imageUrl: r.image_url || null })));
@@ -2575,6 +2635,36 @@ window.addEventListener('load', function () {
         console.error("addRoleplayComment failed", e);
       }
     };
+    const addRoleplayRating = async (postId, animalName, scores, total) => {
+      const localId = uid();
+      const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+      setRoleplayRatings((prev) => [...prev, { id: localId, postId, raterId: me.id, animalName, scores, total, createdAt: nowIso, updatedAt: nowIso }]);
+      try {
+        const rows = await sbRest("roleplay_ratings", { method: "POST", token: session.token, prefer: "return=representation", body: { post_id: postId, rater_id: me.id, animal_name: animalName, scores, total } });
+        const real = rows[0];
+        if (real) setRoleplayRatings((prev) => prev.map((r) => r.id === localId ? __spreadProps(__spreadValues({}, r), { id: real.id }) : r));
+      } catch (e) {
+        console.error("addRoleplayRating failed", e);
+        setRoleplayRatings((prev) => prev.filter((r) => r.id !== localId));
+      }
+    };
+    const editRoleplayRating = async (id, animalName, scores, total) => {
+      const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+      setRoleplayRatings((prev) => prev.map((r) => r.id === id ? __spreadProps(__spreadValues({}, r), { animalName, scores, total, updatedAt: nowIso }) : r));
+      try {
+        await sbRest(`roleplay_ratings?id=eq.${id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body: { animal_name: animalName, scores, total, updated_at: nowIso } });
+      } catch (e) {
+        console.error("editRoleplayRating failed", e);
+      }
+    };
+    const deleteRoleplayRating = async (id) => {
+      setRoleplayRatings((prev) => prev.filter((r) => r.id !== id));
+      try {
+        await sbRest(`roleplay_ratings?id=eq.${id}`, { method: "DELETE", token: session.token, prefer: "return=minimal" });
+      } catch (e) {
+        console.error("deleteRoleplayRating failed", e);
+      }
+    };
     const addQaAnswer = async (targetId, text) => {
       const localId = uid();
       setQaAnswers((prev) => __spreadProps(__spreadValues({}, prev), { [targetId]: [...prev[targetId] || [], { id: localId, userId: me.id, userName: me.name, text, createdAt: Date.now() }] }));
@@ -2609,12 +2699,12 @@ window.addEventListener('load', function () {
         }
       }
     };
-    const updateQaSummary = async (text) => {
-      setQaSummary({ text, updatedBy: me.id, updatedAt: (/* @__PURE__ */ new Date()).toISOString() });
+    const updateQuestionSummary = async (questionId, text) => {
+      setQaQuestionSummaries((prev) => __spreadProps(__spreadValues({}, prev), { [questionId]: { text, updatedBy: me.id, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } }));
       try {
-        await sbRest("qa_summary", { method: "POST", token: session.token, prefer: "resolution=merge-duplicates,return=minimal", body: { id: 1, text, updated_by: me.id, updated_at: (/* @__PURE__ */ new Date()).toISOString() } });
+        await sbRest("qa_question_summaries", { method: "POST", token: session.token, prefer: "resolution=merge-duplicates,return=minimal", body: { question_id: questionId, text, updated_by: me.id, updated_at: (/* @__PURE__ */ new Date()).toISOString() } });
       } catch (e) {
-        console.error("updateQaSummary failed", e);
+        console.error("updateQuestionSummary failed", e);
       }
     };
     const uploadMedia = async (file) => {
@@ -2904,7 +2994,7 @@ window.addEventListener('load', function () {
       const addDays = (iso, delta) => {
         const d = new Date(iso + "T00:00:00");
         d.setDate(d.getDate() + delta);
-        return d.toISOString().slice(0, 10);
+        return localDateISO(d);
       };
       const result = {};
       const today = todayISO();
@@ -2971,7 +3061,7 @@ ${activeSurprise.body}`, null, { sourceSurpriseId: activeSurprise.id }),
       `), /* @__PURE__ */ React.createElement(TopNav, { page, setPage: goToPage, tabs, setShowThemePicker, hasNew }), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 560, margin: "0 auto", padding: "8px 16px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setSession(null), style: { display: "flex", alignItems: "center", gap: 5, fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)", background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(LogOut, { size: 12 }), " ", t.signOut)), page === "home" && /* @__PURE__ */ React.createElement(Home_, { me, users: team, isAdmin, announcements, pointsLog, events, boardPosts, postBoardAnnouncement, deleteBoardPost, uploadMedia, setPage: goToPage, streakByUser, onOpenOcs: (id) => {
       setPendingOcsView(id);
       goToPage("people");
-    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, isAdmin, users: team, posts: spotlightPosts, addPost: addSpotlightPost, editPost: editSpotlightPost, deletePost: deleteSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaSummary, updateQaSummary, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), streakByUser, t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, reorderContacts, checklists, setChecklists, addEvent, t, lang }), page === "progress" && /* @__PURE__ */ React.createElement(ProgressPage, { me, users: team, isAdmin, progressLogs, addProgressLog, updateProgressLog, deleteProgressLog, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, streakByUser, contacts, pointsLog, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }), reactionToast && /* @__PURE__ */ React.createElement("div", { className: "reaction-toast", onClick: () => setReactionToast(null), style: { position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 90, background: "var(--surface)", border: "1px solid var(--accent)", borderRadius: 999, padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.15)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20 } }, reactionToast.emoji), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", fontWeight: 600 } }, reactionToast.name, " ", t.sentReaction === "sent" ? "sent you something!" : "mengirimimu sesuatu!")));
+    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, isAdmin, users: team, posts: spotlightPosts, addPost: addSpotlightPost, editPost: editSpotlightPost, deletePost: deleteSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaQuestionSummaries, updateQuestionSummary, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, users: team, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, ratings: roleplayRatings, addRating: addRoleplayRating, editRating: editRoleplayRating, deleteRating: deleteRoleplayRating, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), streakByUser, t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, reorderContacts, checklists, setChecklists, addEvent, t, lang }), page === "progress" && /* @__PURE__ */ React.createElement(ProgressPage, { me, users: team, isAdmin, progressLogs, addProgressLog, updateProgressLog, deleteProgressLog, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, streakByUser, contacts, pointsLog, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }), reactionToast && /* @__PURE__ */ React.createElement("div", { className: "reaction-toast", onClick: () => setReactionToast(null), style: { position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 90, background: "var(--surface)", border: "1px solid var(--accent)", borderRadius: 999, padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.15)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20 } }, reactionToast.emoji), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", fontWeight: 600 } }, reactionToast.name, " ", t.sentReaction === "sent" ? "sent you something!" : "mengirimimu sesuatu!")));
   }
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(/* @__PURE__ */ React.createElement(App, null));
