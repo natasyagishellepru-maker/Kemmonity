@@ -890,6 +890,10 @@ window.addEventListener('load', function () {
     const [visible, setVisible] = useState(true);
     const lastY = useRef(0);
     useEffect(() => {
+      setVisible(true);
+      lastY.current = 0;
+    }, [page]);
+    useEffect(() => {
       const onScroll = () => {
         const y = window.scrollY;
         if (y < 40) setVisible(true);
@@ -904,8 +908,10 @@ window.addEventListener('load', function () {
   function ThemePicker({ mode, setMode, ambiance, setAmbiance, lang, setLang, onClose, t }) {
     return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center" }, onClick: onClose }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { background: "var(--surface)", borderRadius: "24px 24px 0 0", padding: 24, width: "100%", maxWidth: 480 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 4, background: "var(--hairline)", borderRadius: 2, margin: "0 auto 18px" } }), /* @__PURE__ */ React.createElement("h3", { style: { fontFamily: "'Fraunces', serif", margin: "0 0 14px", color: "var(--text)" } }, t.appearance), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", marginBottom: 8 } }, t.language), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setLang("en"), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `2px solid ${lang === "en" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", cursor: "pointer" } }, "English"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setLang("id"), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `2px solid ${lang === "id" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", cursor: "pointer" } }, "Indonesia")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setMode("light"), style: { flex: 1, padding: "12px 0", borderRadius: 12, border: `2px solid ${mode === "light" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Sun, { size: 16 }), " ", t.light), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setMode("dark"), style: { flex: 1, padding: "12px 0", borderRadius: 12, border: `2px solid ${mode === "dark" ? "var(--accent)" : "var(--hairline)"}`, background: "transparent", color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Moon, { size: 16 }), " ", t.dark)), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", marginBottom: 10 } }, t.ambiance), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 } }, Object.entries(AMBIANCES).map(([key, a]) => /* @__PURE__ */ React.createElement("button", { type: "button", key, onClick: () => setAmbiance(key), style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 40, borderRadius: "50%", background: a.tint, border: ambiance === key ? "3px solid var(--text)" : "3px solid transparent" } }), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 10.5, color: "var(--muted)" } }, a.name))))));
   }
-  function AdminPage({ me, token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, t, lang }) {
+  function AdminPage({ me, token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, editSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, pointsLog, t, lang }) {
     const [surpriseDraft, setSurpriseDraft] = useState({ recipientId: "", title: "", body: "", options: "", file: null });
+    const [editingSurpriseId, setEditingSurpriseId] = useState(null);
+    const [surpriseEditDraft, setSurpriseEditDraft] = useState({ title: "", body: "", options: "" });
     const [surpriseBusy, setSurpriseBusy] = useState(false);
     const submitSurprise = async () => {
       if (!surpriseDraft.recipientId || !surpriseDraft.title.trim() || !surpriseDraft.body.trim()) return;
@@ -927,6 +933,37 @@ window.addEventListener('load', function () {
     const [busy, setBusy] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
+    const [historyMode, setHistoryMode] = useState("week");
+    const [historyOffset, setHistoryOffset] = useState(0);
+    const historyRange = useMemo(() => {
+      const now = /* @__PURE__ */ new Date();
+      if (historyMode === "week") {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(now);
+        monday.setDate(diff + historyOffset * 7);
+        monday.setHours(0, 0, 0, 0);
+        const end = new Date(monday);
+        end.setDate(end.getDate() + 7);
+        return { start: localDateISO(monday), end: localDateISO(end), label: `Week of ${localDateISO(monday)}` };
+      }
+      if (historyMode === "month") {
+        const start = new Date(now.getFullYear(), now.getMonth() + historyOffset, 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + historyOffset + 1, 1);
+        return { start: localDateISO(start), end: localDateISO(end), label: start.toLocaleDateString(void 0, { month: "long", year: "numeric" }) };
+      }
+      const start = new Date(now.getFullYear() + historyOffset, 0, 1);
+      const end = new Date(now.getFullYear() + historyOffset + 1, 0, 1);
+      return { start: localDateISO(start), end: localDateISO(end), label: String(now.getFullYear() + historyOffset) };
+    }, [historyMode, historyOffset]);
+    const historyTotals = useMemo(() => {
+      const totals = {};
+      team.forEach((u) => totals[u.id] = 0);
+      (pointsLog || []).forEach((p) => {
+        if (p.date >= historyRange.start && p.date < historyRange.end) totals[p.userId] = (totals[p.userId] || 0) + p.points;
+      });
+      return team.map((u) => ({ id: u.id, name: u.name, total: totals[u.id] || 0 })).sort((a, b) => b.total - a.total);
+    }, [team, pointsLog, historyRange]);
     const loadTeam = async () => {
       setLoading(true);
       try {
@@ -1018,9 +1055,18 @@ window.addEventListener('load', function () {
         if (pw && pw.length >= 6 && confirm("Set new password for " + u.name + "?")) manageUser(u.id, "reset_password", pw);
         else if (pw) alert("Password must be at least 6 characters.");
       }, title: "Reset password", style: { padding: 6, borderRadius: 8, border: "1px solid var(--hairline)", background: "transparent", color: "var(--muted)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Shield, { size: 13 }))))));
-    }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u2728", title: "Surprise Message" }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("select", { value: surpriseDraft.recipientId, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { recipientId: e.target.value })), style: inputStyle }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u2014"), team.map((u) => /* @__PURE__ */ React.createElement("option", { key: u.id, value: u.id }, u.name))), /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: surpriseDraft.title, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: surpriseDraft.body, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { body: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptOptions, value: surpriseDraft.options, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { options: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { file: e.target.files[0] || null })) }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: surpriseBusy, onClick: submitSurprise, style: primaryBtn }, surpriseBusy ? "\u2026" : t.rpPost)), allSurprises.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, allSurprises.map((s) => /* @__PURE__ */ React.createElement("div", { key: s.id, style: { display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: "var(--text)" } }, s.recipientName, " \u2014 ", s.title), s.response && s.response.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--accent)" } }, t.answeredAs, " ", s.response.join(", "))), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: s.openedAt ? "var(--accent)" : "var(--muted)" } }, s.openedAt ? "\u2713 opened" : "unopened"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+    }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u{1F4CA}", title: "Points History" }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 10 } }, ["week", "month", "year"].map((m) => /* @__PURE__ */ React.createElement("button", { type: "button", key: m, onClick: () => {
+      setHistoryMode(m);
+      setHistoryOffset(0);
+    }, style: { flex: 1, padding: "7px 0", borderRadius: 10, border: `1px solid ${historyMode === m ? "var(--accent)" : "var(--hairline)"}`, background: historyMode === m ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 12, textTransform: "capitalize", cursor: "pointer" } }, m))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setHistoryOffset((o) => o - 1), style: { background: "none", border: "1px solid var(--hairline)", borderRadius: 8, padding: "4px 8px", color: "var(--text)", cursor: "pointer" } }, "\u2190"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "var(--muted)" } }, historyRange.label), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: historyOffset >= 0, onClick: () => setHistoryOffset((o) => Math.min(0, o + 1)), style: { background: "none", border: "1px solid var(--hairline)", borderRadius: 8, padding: "4px 8px", color: historyOffset >= 0 ? "var(--muted)" : "var(--text)", cursor: historyOffset >= 0 ? "default" : "pointer" } }, "\u2192")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 2 } }, historyTotals.map((u, i) => /* @__PURE__ */ React.createElement("div", { key: u.id, style: { display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: i === 0 ? "none" : "1px solid var(--hairline)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)" } }, u.name), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: "var(--accent)" } }, u.total, " pts")))), historyTotals.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, color: "var(--muted)", textAlign: "center", padding: 10 } }, "No data")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: "\u2728", title: "Surprise Message" }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("select", { value: surpriseDraft.recipientId, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { recipientId: e.target.value })), style: inputStyle }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u2014"), team.map((u) => /* @__PURE__ */ React.createElement("option", { key: u.id, value: u.id }, u.name))), /* @__PURE__ */ React.createElement("input", { placeholder: t.title, value: surpriseDraft.title, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { placeholder: t.text, value: surpriseDraft.body, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { body: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("input", { placeholder: t.promptOptions, value: surpriseDraft.options, onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { options: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => setSurpriseDraft(__spreadProps(__spreadValues({}, surpriseDraft), { file: e.target.files[0] || null })) }), /* @__PURE__ */ React.createElement("button", { type: "button", disabled: surpriseBusy, onClick: submitSurprise, style: primaryBtn }, surpriseBusy ? "\u2026" : t.rpPost)), allSurprises.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, allSurprises.map((s) => /* @__PURE__ */ React.createElement("div", { key: s.id, style: { padding: "8px 0", borderTop: "1px solid var(--hairline)" } }, editingSurpriseId === s.id ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, /* @__PURE__ */ React.createElement("input", { value: surpriseEditDraft.title, onChange: (e) => setSurpriseEditDraft(__spreadProps(__spreadValues({}, surpriseEditDraft), { title: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { fontSize: 12.5, padding: "7px 9px" }) }), /* @__PURE__ */ React.createElement("textarea", { value: surpriseEditDraft.body, onChange: (e) => setSurpriseEditDraft(__spreadProps(__spreadValues({}, surpriseEditDraft), { body: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 60, fontSize: 12.5, padding: "7px 9px" }) }), /* @__PURE__ */ React.createElement("input", { value: surpriseEditDraft.options, onChange: (e) => setSurpriseEditDraft(__spreadProps(__spreadValues({}, surpriseEditDraft), { options: e.target.value })), placeholder: t.promptOptions, style: __spreadProps(__spreadValues({}, inputStyle), { fontSize: 12.5, padding: "7px 9px" }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+      editSurpriseMessage(s.id, surpriseEditDraft.title.trim(), surpriseEditDraft.body.trim(), surpriseEditDraft.options.split(",").map((x) => x.trim()).filter(Boolean));
+      setEditingSurpriseId(null);
+    }, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12 }) }, t.saveProfile || "Save"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setEditingSurpriseId(null), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, padding: "6px 0", fontSize: 12, background: "var(--hairline)", color: "var(--text)" }) }, t.cancel))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, color: "var(--text)" } }, s.recipientName, " \u2014 ", s.title, s.kind && s.kind !== "manual" && /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, color: "var(--accent)", marginLeft: 6 } }, "[", s.kind, s.weekOf ? ` \xB7 ${s.weekOf}` : "", "]")), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginTop: 2 } }, s.body), s.response && s.response.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--accent)" } }, t.answeredAs, " ", s.response.join(", "))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "flex-start", gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: s.openedAt ? "var(--accent)" : "var(--muted)" } }, s.openedAt ? "\u2713 opened" : "unopened"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+      setSurpriseEditDraft({ title: s.title, body: s.body, options: (s.responseOptions || []).join(", ") });
+      setEditingSurpriseId(s.id);
+    }, style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Edit3, { size: 13 })), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       if (confirm(t.confirmDeleteUser)) deleteSurpriseMessage(s.id);
-    }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0, marginLeft: 8 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))));
+    }, style: { background: "none", border: "none", color: "#E8846B", cursor: "pointer", padding: 0 } }, /* @__PURE__ */ React.createElement(Trash2, { size: 13 })))))))));
   }
   function MiniCalendar({ events, setPage, t }) {
     const now = /* @__PURE__ */ new Date();
@@ -1365,10 +1411,7 @@ window.addEventListener('load', function () {
       pointsLog.forEach((p) => {
         if (p.date >= lastWeekStart && p.date < weekStart) totals[p.userId] = (totals[p.userId] || 0) + p.points;
       });
-      const maxTotal = Math.max(0, ...Object.values(totals));
-      if (maxTotal === 0) return null;
-      const winner = users.find((u) => totals[u.id] === maxTotal);
-      return winner ? { name: winner.name, total: maxTotal } : null;
+      return users.filter((u) => totals[u.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 3).map((u) => ({ name: u.name, total: totals[u.id] }));
     }, [pointsLog, users, weekStart]);
     const [newAnn, setNewAnn] = useState({ title: "", description: "", metric: "OCS", goal: 10, reward: "", deadline: "", targetUserIds: [] });
     const [editingAnnId, setEditingAnnId] = useState(null);
@@ -1415,7 +1458,7 @@ window.addEventListener('load', function () {
     };
     const pointsModalEl = pointsModal && /* @__PURE__ */ React.createElement("div", { onClick: () => setPointsModal(null), style: { position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { width: "100%", maxWidth: 420, background: "var(--surface)", borderRadius: "20px 20px 0 0", padding: 20 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" } }, pointsModal.label, " \xB7 +", pointsModal.pts), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setPointsModal(null), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(X, { size: 16 }))), /* @__PURE__ */ React.createElement("label", { style: { display: "block", fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginBottom: 6 } }, "Date"), /* @__PURE__ */ React.createElement("input", { type: "date", value: pointsModal.date, max: localDateISO(), onChange: (e) => setPointsModal(__spreadProps(__spreadValues({}, pointsModal), { date: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 14, textAlign: "center" }) }), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", justifyContent: "space-between", fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("span", null, "Notes \u2014 who / what"), /* @__PURE__ */ React.createElement("span", null, pointsModal.notes.length, "/25")), /* @__PURE__ */ React.createElement("input", { value: pointsModal.notes, maxLength: 25, onChange: (e) => setPointsModal(__spreadProps(__spreadValues({}, pointsModal), { notes: e.target.value.slice(0, 25) })), placeholder: "e.g. Met with Budi", style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 16 }) }), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submitPointsModal, style: primaryBtn }, t.addPoints || "Submit")));
     const confirmModalEl = confirmModal && /* @__PURE__ */ React.createElement("div", { onClick: () => setConfirmModal(null), style: { position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { width: "100%", maxWidth: 340, background: "var(--surface)", borderRadius: 20, padding: 26, textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "emoji-pop", style: { fontSize: 44, marginBottom: 8 } }, "\u2705"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'Fraunces', serif", fontSize: 19, fontWeight: 700, color: "var(--text)" } }, "+", confirmModal.pts, " points added!"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--muted)", marginTop: 4 } }, confirmModal.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "var(--accent)", marginTop: 12 } }, "This week's total: ", confirmModal.newTotal), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setConfirmModal(null), style: __spreadProps(__spreadValues({}, primaryBtn), { marginTop: 16 }) }, "Nice!")));
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, [["board", t.leaderboard, Trophy], ["contests", t.contests, Megaphone]].map(([key, label, Icon2]) => /* @__PURE__ */ React.createElement("button", { type: "button", key, onClick: () => setTab(key), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `1px solid ${tab === key ? "var(--accent)" : "var(--hairline)"}`, background: tab === key ? "var(--tint)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Icon2, { size: 14 }), " ", label))), tab === "board" && /* @__PURE__ */ React.createElement(React.Fragment, null, lastWeekTop && /* @__PURE__ */ React.createElement(Card, { style: { borderColor: "var(--accent)", background: "var(--tint)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 22 } }, "\u{1F3C6}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13.5, color: "var(--text)" } }, lastWeekTop.name), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)" } }, "Last week's best OCS maker \xB7 ", lastWeekTop.total, " pts")))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: `${t.weekOf} ${weekStart}`, title: t.podium }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 14, padding: "10px 0 4px" } }, [ranked[1], ranked[0], ranked[2]].map((u, i) => u && /* @__PURE__ */ React.createElement("div", { key: u.id, style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(GrowthRing, { tier: u.role, emoji: u.avatar_emoji, avatarUrl: u.avatar_url, size: i === 1 ? 58 : 44, streak: (streakByUser || {})[u.id] || 0 }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "var(--text)" } }, u.name), /* @__PURE__ */ React.createElement("div", { style: { width: i === 1 ? 60 : 46, height: i === 1 ? 54 : i === 0 ? 38 : 26, background: "var(--tint)", borderRadius: "8px 8px 0 0", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: "var(--onAccent)" } }, i === 1 ? "1" : i === 0 ? "2" : "3")), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--accent)" } }, weeklyPoints[u.id] || 0, " pts"))))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { title: t.fullStandings, right: isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, [["board", t.leaderboard, Trophy], ["contests", t.contests, Megaphone]].map(([key, label, Icon2]) => /* @__PURE__ */ React.createElement("button", { type: "button", key, onClick: () => setTab(key), style: { flex: 1, padding: "10px 0", borderRadius: 12, border: `1px solid ${tab === key ? "var(--accent)" : "var(--hairline)"}`, background: tab === key ? "var(--tint)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(Icon2, { size: 14 }), " ", label))), tab === "board" && /* @__PURE__ */ React.createElement(React.Fragment, null, lastWeekTop.length > 0 && /* @__PURE__ */ React.createElement(Card, { style: { borderColor: "var(--accent)", background: "var(--tint)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 } }, "Last week's best OCS makers"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 6 } }, lastWeekTop.map((w, i) => /* @__PURE__ */ React.createElement("div", { key: w.name, style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 18 } }, ["\u{1F947}", "\u{1F948}", "\u{1F949}"][i]), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13.5, color: "var(--text)" } }, w.name), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11.5, color: "var(--muted)", marginLeft: "auto" } }, w.total, " pts"))))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: `${t.weekOf} ${weekStart}`, title: t.podium }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 14, padding: "10px 0 4px" } }, [ranked[1], ranked[0], ranked[2]].map((u, i) => u && /* @__PURE__ */ React.createElement("div", { key: u.id, style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(GrowthRing, { tier: u.role, emoji: u.avatar_emoji, avatarUrl: u.avatar_url, size: i === 1 ? 58 : 44, streak: (streakByUser || {})[u.id] || 0 }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 700, color: "var(--text)" } }, u.name), /* @__PURE__ */ React.createElement("div", { style: { width: i === 1 ? 60 : 46, height: i === 1 ? 54 : i === 0 ? 38 : 26, background: "var(--tint)", borderRadius: "8px 8px 0 0", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: "var(--onAccent)" } }, i === 1 ? "1" : i === 0 ? "2" : "3")), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--accent)" } }, weeklyPoints[u.id] || 0, " pts"))))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { title: t.fullStandings, right: isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       if (confirm(t.confirmDeleteUser) && confirm("Really reset ALL points for everyone? This cannot be undone.")) resetLeaderboard();
     }, style: { background: "none", border: "1px solid #E8846B", borderRadius: 999, padding: "4px 10px", color: "#E8846B", fontFamily: "Inter, sans-serif", fontSize: 10.5, cursor: "pointer" } }, "Reset") }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 2 } }, ranked.map((u, i) => {
       const canView = u.id === me.id || isAdmin || u.leader_id === me.id;
@@ -2094,18 +2137,36 @@ window.addEventListener('load', function () {
       } catch (e) {
       }
     };
+    const refreshSession = async () => {
+      if (!session || !session.refreshToken) return null;
+      try {
+        const data = await sbAuth("token?grant_type=refresh_token", { refresh_token: session.refreshToken });
+        const profileRows = await sbRest(`profiles?id=eq.${data.user.id}&select=*`, { token: data.access_token });
+        const next = { token: data.access_token, refreshToken: data.refresh_token, authUser: data.user, profile: profileRows[0] };
+        setSession(next);
+        return next;
+      } catch (e) {
+        setSession(null);
+        return null;
+      }
+    };
+    useEffect(() => {
+      refreshSession();
+    }, []);
     useEffect(() => {
       if (!session || !session.refreshToken) return;
-      (async () => {
-        try {
-          const data = await sbAuth("token?grant_type=refresh_token", { refresh_token: session.refreshToken });
-          const profileRows = await sbRest(`profiles?id=eq.${data.user.id}&select=*`, { token: data.access_token });
-          setSession({ token: data.access_token, refreshToken: data.refresh_token, authUser: data.user, profile: profileRows[0] });
-        } catch (e) {
-          setSession(null);
-        }
-      })();
-    }, []);
+      const interval = setInterval(() => {
+        refreshSession();
+      }, 25 * 60 * 1e3);
+      const onVisible = () => {
+        if (document.visibilityState === "visible") refreshSession();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      return () => {
+        clearInterval(interval);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
+    }, [session && session.refreshToken]);
     const [team, setTeam] = useState([]);
     const [materials, setMaterialsState] = useState([]);
     const [questions, setQuestionsState] = useState([]);
@@ -2135,6 +2196,7 @@ window.addEventListener('load', function () {
     const [reactionToast, setReactionToast] = useState(null);
     const lastReactionCheckRef = useRef(null);
     const weeklyGenLockRef = useRef(false);
+    const [dataLoaded, setDataLoaded] = useState(false);
     const [mySurprise, setMySurprise] = useState(null);
     const [allSurprises, setAllSurprises] = useState([]);
     const [activeSurprise, setActiveSurprise] = useState(null);
@@ -2169,11 +2231,12 @@ window.addEventListener('load', function () {
       })();
     }, [session && session.profile && session.profile.id]);
     useEffect(() => {
-      if (!session || !session.profile || team.length === 0 || weeklyGenLockRef.current) return;
-      const weekStart = startOfWeekISO();
-      const already = allSurprises.some((s) => s.recipientId === me.id && s.weekOf === weekStart && ["weekly_top", "weekly_zero", "weekly_mid"].includes(s.kind));
-      if (already) return;
+      if (!session || !session.profile || !dataLoaded || weeklyGenLockRef.current) return;
+      const myRole = (team.find((u) => u.id === session.profile.id) || session.profile).role;
+      if (myRole !== "admin") return;
       weeklyGenLockRef.current = true;
+      const meId = session.profile.id;
+      const weekStart = startOfWeekISO();
       const lastWeekStartD = new Date(weekStart + "T00:00:00");
       lastWeekStartD.setDate(lastWeekStartD.getDate() - 7);
       const lastWeekStart = localDateISO(lastWeekStartD);
@@ -2182,29 +2245,42 @@ window.addEventListener('load', function () {
       pointsLog.forEach((p) => {
         if (p.date >= lastWeekStart && p.date < weekStart) totals[p.userId] = (totals[p.userId] || 0) + p.points;
       });
-      const maxTotal = Math.max(0, ...Object.values(totals));
-      const myTotal = totals[me.id] || 0;
-      let title, body, options, kind;
-      if (maxTotal > 0 && myTotal === maxTotal) {
-        kind = "weekly_top";
-        title = "\u{1F3C6} Last week's top OCS maker!";
-        body = `Amazing work \u2014 you led the team last week with ${myTotal} OCS points. Can you do it again this week?`;
-        options = WEEKLY_TOP_OPTIONS;
-      } else if (myTotal === 0) {
-        kind = "weekly_zero";
-        title = "We noticed something";
-        body = "We see you haven't submitted any OCS points last week. Can you update it for us?";
-        options = WEEKLY_ZERO_OPTIONS;
-      } else {
-        kind = "weekly_mid";
-        title = "Your week in review";
-        body = `You logged ${myTotal} OCS points last week. Keep it up \u2014 let's aim even higher this week!`;
-        options = WEEKLY_MID_OPTIONS;
-      }
-      sendSurpriseMessage(me.id, title, body, options, null, weekStart, kind).then((real) => {
-        if (real) setMySurprise({ id: real.id, title, body, responseOptions: options, imageUrl: null, weekOf: weekStart, kind });
-      }).catch((e) => console.error("weekly surprise generation failed", e));
-    }, [session && session.profile && session.profile.id, team.length, pointsLog.length, allSurprises.length]);
+      const rankedIds = Object.keys(totals).filter((id) => totals[id] > 0).sort((a, b) => totals[b] - totals[a]);
+      const rankById = {};
+      rankedIds.forEach((id, i) => rankById[id] = i + 1);
+      const alreadyHas = (userId) => allSurprises.some((s) => s.recipientId === userId && s.weekOf === weekStart && ["weekly_top", "weekly_zero", "weekly_mid"].includes(s.kind));
+      const pending = team.filter((u) => !alreadyHas(u.id));
+      if (pending.length === 0) return;
+      (async () => {
+        for (const u of pending) {
+          const total = totals[u.id] || 0;
+          const rank = rankById[u.id];
+          let title, body, options, kind;
+          if (rank && rank <= 3) {
+            kind = "weekly_top";
+            title = `\u{1F3C6} Congrats \u2014 you're #${rank} last week!`;
+            body = `You logged ${total} OCS points last week, ranking #${rank} on the team. Can you do it again this week?`;
+            options = WEEKLY_TOP_OPTIONS;
+          } else if (total === 0) {
+            kind = "weekly_zero";
+            title = "We noticed something";
+            body = "We see you haven't submitted any OCS points last week. Can you update it for us?";
+            options = WEEKLY_ZERO_OPTIONS;
+          } else {
+            kind = "weekly_mid";
+            title = "Your week in review";
+            body = `You logged ${total} OCS points last week. You can do better this week \u2014 let's go!`;
+            options = WEEKLY_MID_OPTIONS;
+          }
+          try {
+            const real = await sendSurpriseMessage(u.id, title, body, options, null, weekStart, kind);
+            if (real && u.id === meId) setMySurprise({ id: real.id, title, body, responseOptions: options, imageUrl: null, weekOf: weekStart, kind });
+          } catch (e) {
+            console.error("weekly surprise generation failed for", u.id, e);
+          }
+        }
+      })();
+    }, [session && session.profile && session.profile.id, dataLoaded, team.length]);
     useEffect(() => {
       if (!session || !session.profile) return;
       lastReactionCheckRef.current = (/* @__PURE__ */ new Date()).toISOString();
@@ -2347,6 +2423,7 @@ window.addEventListener('load', function () {
             list.push({ id: r.id, fromUserId: r.from_user_id, fromUserName: nameById[r.from_user_id] || "", type: r.type, createdAt: new Date(r.created_at).getTime() });
           });
           setProfileReactions(groupedReactions);
+          setDataLoaded(true);
         } catch (e) {
           console.error("initial shared data load failed", e);
         }
@@ -2957,6 +3034,14 @@ window.addEventListener('load', function () {
         console.error("deleteSurpriseMessage failed", e);
       }
     };
+    const editSurpriseMessage = async (id, title, body, responseOptions) => {
+      setAllSurprises((prev) => prev.map((s) => s.id === id ? __spreadProps(__spreadValues({}, s), { title, body, responseOptions }) : s));
+      try {
+        await sbRest(`surprise_messages?id=eq.${id}`, { method: "PATCH", token: session.token, prefer: "return=minimal", body: { title, body, response_options: responseOptions } });
+      } catch (e) {
+        console.error("editSurpriseMessage failed", e);
+      }
+    };
     const openSurprise = async (id) => {
       setMySurprise(null);
       try {
@@ -3003,7 +3088,19 @@ window.addEventListener('load', function () {
       const localId = uid();
       setProfileReactions((prev) => __spreadProps(__spreadValues({}, prev), { [profileId]: [{ id: localId, fromUserId: me.id, fromUserName: me.name, type, createdAt: Date.now() }, ...prev[profileId] || []] }));
       try {
-        await sbRest("profile_reactions", { method: "POST", token: session.token, prefer: "return=minimal", body: { profile_id: profileId, from_user_id: me.id, type } });
+        try {
+          await sbRest("profile_reactions", { method: "POST", token: session.token, prefer: "return=minimal", body: { profile_id: profileId, from_user_id: me.id, type } });
+        } catch (e) {
+          const msg = String((e && e.message) || e);
+          if (/jwt|expired|401/i.test(msg)) {
+            const fresh = await refreshSession();
+            if (fresh) {
+              await sbRest("profile_reactions", { method: "POST", token: fresh.token, prefer: "return=minimal", body: { profile_id: profileId, from_user_id: me.id, type } });
+              return;
+            }
+          }
+          throw e;
+        }
       } catch (e) {
         setProfileReactions((prev) => __spreadProps(__spreadValues({}, prev), { [profileId]: (prev[profileId] || []).filter((r) => r.id !== localId) }));
         throw e;
@@ -3138,7 +3235,7 @@ ${activeSurprise.body}`, null, { sourceSurpriseId: activeSurprise.id }),
       `), /* @__PURE__ */ React.createElement(TopNav, { page, setPage: goToPage, tabs, setShowThemePicker, hasNew }), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 560, margin: "0 auto", padding: "8px 16px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setSession(null), style: { display: "flex", alignItems: "center", gap: 5, fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)", background: "none", border: "none", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(LogOut, { size: 12 }), " ", t.signOut)), page === "home" && /* @__PURE__ */ React.createElement(Home_, { me, users: team, isAdmin, announcements, pointsLog, events, boardPosts, postBoardAnnouncement, deleteBoardPost, uploadMedia, setPage: goToPage, streakByUser, onOpenOcs: (id) => {
       setPendingOcsView(id);
       goToPage("people");
-    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, isAdmin, users: team, posts: spotlightPosts, addPost: addSpotlightPost, editPost: editSpotlightPost, deletePost: deleteSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaQuestionSummaries, updateQuestionSummary, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, users: team, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, ratings: roleplayRatings, addRating: addRoleplayRating, editRating: editRoleplayRating, deleteRating: deleteRoleplayRating, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), streakByUser, t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, reorderContacts, checklists, setChecklists, addEvent, t, lang }), page === "progress" && /* @__PURE__ */ React.createElement(ProgressPage, { me, users: team, isAdmin, progressLogs, addProgressLog, updateProgressLog, deleteProgressLog, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, streakByUser, contacts, pointsLog, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }), reactionToast && /* @__PURE__ */ React.createElement("div", { className: "reaction-toast", onClick: () => setReactionToast(null), style: { position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 90, background: "var(--surface)", border: "1px solid var(--accent)", borderRadius: 999, padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.15)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20 } }, reactionToast.emoji), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", fontWeight: 600 } }, reactionToast.name, " ", t.sentReaction === "sent" ? "sent you something!" : "mengirimimu sesuatu!")));
+    }, t, lang }), page === "calendar" && /* @__PURE__ */ React.createElement(CalendarPage, { me, users: team, isAdmin, events, addEvent, deleteEvent, recurringEvents, addRecurringEvent, deleteRecurringEvent, uploadMedia, t, lang }), page === "spotlight" && /* @__PURE__ */ React.createElement(SpotlightPage, { me, isAdmin, users: team, posts: spotlightPosts, addPost: addSpotlightPost, editPost: editSpotlightPost, deletePost: deleteSpotlightPost, uploadMedia, likes: spotlightLikes, toggleLike: toggleSpotlightLike, comments: spotlightComments, addComment: addSpotlightComment, seen: spotlightSeen, markSeen: markSpotlightSeen, t }), page === "materials" && /* @__PURE__ */ React.createElement(Materials, { materials, questions, me, isAdmin: canManageMaterials, addQuestion, addMaterial, editMaterial, deleteMaterial, approveMaterial, rejectMaterial, qa, setPage: goToPage, t, lang }), page === "qa" && /* @__PURE__ */ React.createElement(QALibrary, { qa, addQA, materialQuestions: questions, materials, setPage: goToPage, qaAnswers, addQaAnswer, me, isAdmin, toggleQuestionUrgent, deleteQaItem, deleteQuestionItem, qaLikes, toggleQaLike, qaQuestionSummaries, updateQuestionSummary, t, lang }), page === "roleplay" && /* @__PURE__ */ React.createElement(RolePlay, { me, isAdmin, users: team, posts: roleplayPosts, addPost: addRoleplayPost, editPost: editRoleplayPost, deletePost: deleteRoleplayPost, comments: roleplayComments, addComment: addRoleplayComment, ratings: roleplayRatings, addRating: addRoleplayRating, editRating: editRoleplayRating, deleteRating: deleteRoleplayRating, t }), page === "people" && /* @__PURE__ */ React.createElement(People, { users: team, pointsLog, addPoints, editPoints, deletePoints, resetLeaderboard, isAdmin, me, announcements, addAnnouncement, editAnnouncement, deleteAnnouncement, toggleAnnouncement, pendingOcsView, clearPendingOcsView: () => setPendingOcsView(null), streakByUser, t, lang }), page === "contacts" && /* @__PURE__ */ React.createElement(ContactsPage, { me, users: team, contacts, setContacts, reorderContacts, checklists, setChecklists, addEvent, t, lang }), page === "progress" && /* @__PURE__ */ React.createElement(ProgressPage, { me, users: team, isAdmin, progressLogs, addProgressLog, updateProgressLog, deleteProgressLog, t, lang }), page === "profile" && /* @__PURE__ */ React.createElement(Profile, { me, users: team, updateMe, token: session.token, isAdmin, changePassword, renameUsername, weeklyPrompt, updateWeeklyPrompt, profileComments, addProfileComment, profileReactions, sendReaction, deleteReaction, streakByUser, contacts, pointsLog, t, lang }), page === "admin" && isAdmin && /* @__PURE__ */ React.createElement(AdminPage, { me, token: session.token, sendSurpriseMessage, allSurprises, deleteSurpriseMessage, editSurpriseMessage, uploadMedia, weeklyPrompt, updateWeeklyPrompt, pointsLog, t, lang })), page === "materials" && /* @__PURE__ */ React.createElement(FloatingAsk, { lang, t, onSubmit: ({ category, text }) => addQuestion({ id: "q-" + uid(), materialId: null, category, userId: me.id, userName: me.name, text, ts: Date.now() }) }), showThemePicker && /* @__PURE__ */ React.createElement(ThemePicker, { mode: prefs.mode, setMode: (m) => setPrefs(__spreadProps(__spreadValues({}, prefs), { mode: m })), ambiance: prefs.ambiance, setAmbiance: (a) => setPrefs(__spreadProps(__spreadValues({}, prefs), { ambiance: a })), lang, setLang: (l) => setPrefs(__spreadProps(__spreadValues({}, prefs), { lang: l })), onClose: () => setShowThemePicker(false), t }), reactionToast && /* @__PURE__ */ React.createElement("div", { className: "reaction-toast", onClick: () => setReactionToast(null), style: { position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 90, background: "var(--surface)", border: "1px solid var(--accent)", borderRadius: 999, padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.15)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 20 } }, reactionToast.emoji), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13, color: "var(--text)", fontWeight: 600 } }, reactionToast.name, " ", t.sentReaction === "sent" ? "sent you something!" : "mengirimimu sesuatu!")));
   }
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(/* @__PURE__ */ React.createElement(App, null));
