@@ -510,6 +510,11 @@ window.addEventListener('load', function () {
       fire: "Fire up",
       sentReaction: "sent",
       noComments: "No comments yet.",
+      activityNotePlaceholder: "Notes (optional) \u2014 who / what?",
+      loggedTitle: "Logged!",
+      addNoteAfter: "Add a note (who / what) \u2014 optional",
+      saveNote: "Save note",
+      doneLabel: "Skip",
       thisHour: "this hour",
       reactionLimitReached: "You've reached the limit for this hour \u2014 try again later.",
       chitChatPlaceholder: "Share something to the team or simply say hi\u2026",
@@ -728,6 +733,11 @@ window.addEventListener('load', function () {
       fire: "Semangat",
       sentReaction: "mengirim",
       noComments: "Belum ada komentar.",
+      activityNotePlaceholder: "Catatan (opsional) \u2014 siapa / apa?",
+      loggedTitle: "Tercatat!",
+      addNoteAfter: "Tambah catatan (siapa / apa) \u2014 opsional",
+      saveNote: "Simpan catatan",
+      doneLabel: "Lewati",
       thisHour: "jam ini",
       reactionLimitReached: "Sudah mencapai batas untuk jam ini \u2014 coba lagi nanti.",
       chitChatPlaceholder: "Bagikan sesuatu ke tim atau sekadar bilang hai\u2026",
@@ -1336,6 +1346,20 @@ window.addEventListener('load', function () {
       }
     }, [pendingOcsView]);
     const [activityNote, setActivityNote] = useState("");
+    const [justLogged, setJustLogged] = useState(null);
+    const saveJustLoggedNote = async (entry) => {
+      if (!entry) return;
+      const text = (entry.note || "").trim();
+      if (!text || text === (entry.initial || "").trim()) return;
+      const id = await entry.promise;
+      if (id) editPoints(id, { notes: text });
+    };
+    const logActivityPoints = (label, pts) => {
+      if (justLogged) saveJustLoggedNote(justLogged);
+      const promise = addPoints(me.id, pts, label, activityNote);
+      setJustLogged({ label, pts, promise, initial: activityNote, note: activityNote });
+      setActivityNote("");
+    };
     const ACTIVITY_GROUPS = [
       { label: "BUILDING TEAM", items: [
         ["Bawa capartner ke BTL", 0.5],
@@ -1377,12 +1401,15 @@ window.addEventListener('load', function () {
         onClose: () => setViewingOcsId(null),
         t
       }
-    ), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: t.logActivity, title: t.addPoints }), /* @__PURE__ */ React.createElement("input", { value: activityNote, onChange: (e) => setActivityNote(e.target.value), placeholder: t.addAnswer, style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 12 }) }), ACTIVITY_GROUPS.map((group) => /* @__PURE__ */ React.createElement("div", { key: group.label, style: { marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--accent)", marginBottom: 6 } }, group.label), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, group.items.map(([label, pts]) => {
+    ), justLogged && /* @__PURE__ */ React.createElement("div", { onClick: () => {
+      saveJustLoggedNote(justLogged);
+      setJustLogged(null);
+    }, style: { position: "fixed", inset: 0, zIndex: 280, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { width: "100%", maxWidth: 480, background: "var(--surface)", borderRadius: "20px 20px 0 0", padding: 18, display: "grid", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" } }, "\u2705 ", t.loggedTitle, " ", /* @__PURE__ */ React.createElement("span", { style: { color: "var(--accent)", fontFamily: "'JetBrains Mono', monospace" } }, "+", justLogged.pts), " \xB7 ", justLogged.label), /* @__PURE__ */ React.createElement("textarea", { autoFocus: true, placeholder: t.addNoteAfter, value: justLogged.note, onChange: (e) => setJustLogged(__spreadProps(__spreadValues({}, justLogged), { note: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 70 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
+      saveJustLoggedNote(justLogged);
+      setJustLogged(null);
+    }, style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1 }) }, t.saveNote), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setJustLogged(null), style: __spreadProps(__spreadValues({}, primaryBtn), { flex: 1, background: "var(--hairline)", color: "var(--text)" }) }, t.doneLabel)))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionTitle, { eyebrow: t.logActivity, title: t.addPoints }), /* @__PURE__ */ React.createElement("input", { value: activityNote, onChange: (e) => setActivityNote(e.target.value), placeholder: t.activityNotePlaceholder, style: __spreadProps(__spreadValues({}, inputStyle), { marginBottom: 12 }) }), ACTIVITY_GROUPS.map((group) => /* @__PURE__ */ React.createElement("div", { key: group.label, style: { marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--accent)", marginBottom: 6 } }, group.label), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, group.items.map(([label, pts]) => {
       const isCapped = label === WEEKLY_CAP_LABEL && eduCapReached;
-      return /* @__PURE__ */ React.createElement("button", { type: "button", key: label, disabled: isCapped, onClick: () => {
-        addPoints(me.id, pts, label, activityNote);
-        setActivityNote("");
-      }, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 12, border: "1px solid var(--hairline)", background: "transparent", cursor: isCapped ? "default" : "pointer", opacity: isCapped ? 0.45 : 1 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)" } }, label, isCapped ? " \u2014 batas minggu ini tercapai" : ""), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 12.5, color: "var(--accent)", fontWeight: 700 } }, "+", pts));
+      return /* @__PURE__ */ React.createElement("button", { type: "button", key: label, disabled: isCapped, onClick: () => logActivityPoints(label, pts), style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 12, border: "1px solid var(--hairline)", background: "transparent", cursor: isCapped ? "default" : "pointer", opacity: isCapped ? 0.45 : 1 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "Inter, sans-serif", fontSize: 13.5, color: "var(--text)" } }, label, isCapped ? " \u2014 batas minggu ini tercapai" : ""), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 12.5, color: "var(--accent)", fontWeight: 700 } }, "+", pts));
     })))))), tab === "contests" && /* @__PURE__ */ React.createElement(React.Fragment, null, announcements.map((a) => /* @__PURE__ */ React.createElement(Card, { key: a.id, style: { opacity: a.active ? 1 : 0.55 } }, editingAnnId === a.id ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { value: annDraft.title, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { title: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("textarea", { value: annDraft.description, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { description: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { minHeight: 55 }) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("input", { value: annDraft.metric, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { metric: e.target.value })), style: __spreadProps(__spreadValues({}, inputStyle), { flex: 1 }) }), /* @__PURE__ */ React.createElement("input", { type: "number", value: annDraft.goal, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { goal: Number(e.target.value) })), style: __spreadProps(__spreadValues({}, inputStyle), { width: 80 }) })), /* @__PURE__ */ React.createElement("input", { value: annDraft.reward, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { reward: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("input", { placeholder: t.winnerName, value: annDraft.winnerName, onChange: (e) => setAnnDraft(__spreadProps(__spreadValues({}, annDraft), { winnerName: e.target.value })), style: inputStyle }), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 11.5, color: "var(--muted)" } }, t.contestVisibility), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, users.map((u) => /* @__PURE__ */ React.createElement("button", { type: "button", key: u.id, onClick: () => setAnnDraft((d) => __spreadProps(__spreadValues({}, d), { targetUserIds: (d.targetUserIds || []).includes(u.id) ? d.targetUserIds.filter((x) => x !== u.id) : [...d.targetUserIds || [], u.id] })), style: { padding: "5px 10px", borderRadius: 999, border: `1px solid ${(annDraft.targetUserIds || []).includes(u.id) ? "var(--accent)" : "var(--hairline)"}`, background: (annDraft.targetUserIds || []).includes(u.id) ? "var(--tint)" : "transparent", color: "var(--text)", fontFamily: "Inter, sans-serif", fontSize: 11, cursor: "pointer" } }, u.name))), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Inter, sans-serif", fontSize: 10.5, color: "var(--muted)" } }, (annDraft.targetUserIds || []).length === 0 ? t.visibleToEveryone : `${t.visibleToSelected} (${annDraft.targetUserIds.length})`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => {
       if (confirm(t.editProfile + "?")) {
         editAnnouncement(a.id, annDraft);
@@ -2091,11 +2118,13 @@ window.addEventListener('load', function () {
         const newPoints = ((target == null ? void 0 : target.points) || 0) + pts;
         await sbRest(`profiles?id=eq.${userId}`, { method: "PATCH", token: session.token, body: { points: newPoints }, prefer: "return=minimal" });
         if (userId === me.id) logActivity(t.activityLoggedPoints);
+        return real ? real.id : localId;
       } catch (e) {
         console.error("addPoints failed", e);
         setPointsLogState((prev) => prev.filter((p) => p.id !== localId));
         setTeam((prev) => prev.map((u) => u.id === userId ? __spreadProps(__spreadValues({}, u), { points: (u.points || 0) - pts }) : u));
         alert("Couldn't save this point entry \u2014 check your connection and try again.");
+        return null;
       }
     };
     const editPoints = async (id, patch) => {
